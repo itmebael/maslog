@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Account — Maslog Cold Spring</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --green-deep: #1b4332;
+      --green-mid: #40916c;
+      --green-bright: #76c893;
+      --text: #ffffff;
+      --text-muted: rgba(255, 255, 255, 0.72);
+      --serif: "Cormorant Garamond", Georgia, serif;
+      --sans: "Outfit", sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { min-height: 100%; }
+
+    body {
+      font-family: var(--sans);
+      color: var(--text);
+      background:
+        linear-gradient(105deg, rgba(8, 28, 16, 0.6) 0%, rgba(8, 28, 16, 0.3) 45%, rgba(8, 28, 16, 0.5) 100%),
+        url("backg.png") center / cover no-repeat fixed;
+    }
+
+    .page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1.25rem;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 760px;
+      background: rgba(12, 28, 18, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 22px;
+      padding: 1.75rem 1.6rem 1.5rem;
+      backdrop-filter: blur(18px);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+    }
+
+    .back {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+    }
+
+    .back svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    h1 {
+      font-family: var(--serif);
+      font-size: 2rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 1.35rem;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.85rem;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .field.span-2 { grid-column: 1 / -1; }
+
+    .field label {
+      font-size: 0.75rem;
+      font-weight: 550;
+      color: rgba(255, 255, 255, 0.85);
+    }
+
+    .field input,
+    .field select {
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(0, 0, 0, 0.28);
+      border-radius: 10px;
+      padding: 0.7rem 0.85rem;
+      color: #fff;
+      font-family: inherit;
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .field input:focus,
+    .field select:focus {
+      border-color: var(--green-bright);
+      box-shadow: 0 0 0 3px rgba(118, 200, 147, 0.2);
+    }
+
+    .field input::placeholder { color: rgba(255, 255, 255, 0.4); }
+
+    .hint {
+      font-size: 0.72rem;
+      color: rgba(255, 255, 255, 0.55);
+    }
+
+    .media-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.85rem;
+      grid-column: 1 / -1;
+    }
+
+    .media-box {
+      border: 1.5px dashed rgba(255, 255, 255, 0.28);
+      border-radius: 14px;
+      padding: 0.85rem;
+      background: rgba(0, 0, 0, 0.22);
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      min-height: 0;
+      min-width: 0;
+    }
+
+    .media-box h3 {
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+
+    .preview {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      min-height: 180px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.06);
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .preview img,
+    .preview video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    #camVideo,
+    #selfieImg {
+      object-position: center center;
+      background: rgba(0, 0, 0, 0.18);
+    }
+
+    .preview .ph {
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.45);
+      text-align: center;
+      padding: 0.5rem;
+    }
+
+    .media-actions {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    .media-actions .btn {
+      flex: 1 1 130px;
+      justify-content: center;
+      min-height: 42px;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 9px;
+      padding: 0.55rem 0.75rem;
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      text-align: center;
+      white-space: normal;
+    }
+
+    .btn svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    .btn-soft {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    .btn-soft:hover { background: rgba(255, 255, 255, 0.2); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--green-mid), var(--green-deep));
+      color: #fff;
+      width: 100%;
+      justify-content: center;
+      padding: 0.85rem 1rem;
+      font-size: 0.95rem;
+      margin-top: 0.35rem;
+      min-height: 48px;
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .gmail-row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: stretch;
+    }
+
+    .gmail-row input { flex: 1; }
+
+    .verify-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.72rem;
+      font-weight: 650;
+      padding: 0.25rem 0.55rem;
+      border-radius: 999px;
+      width: fit-content;
+    }
+
+    .verify-badge.pending { background: rgba(241, 196, 15, 0.2); color: #f7dc6f; }
+    .verify-badge.ok { background: rgba(46, 204, 113, 0.25); color: #82e0aa; }
+
+    .otp-box {
+      display: none;
+      gap: 0.5rem;
+      margin-top: 0.45rem;
+    }
+
+    .otp-box.open { display: flex; }
+
+    .otp-box input {
+      flex: 1;
+      letter-spacing: 0.2em;
+      text-align: center;
+      font-weight: 650;
+    }
+
+    .note {
+      grid-column: 1 / -1;
+      font-size: 0.78rem;
+      color: rgba(255, 255, 255, 0.6);
+      line-height: 1.45;
+      padding: 0.75rem 0.85rem;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 10px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 1.25rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(12px);
+      background: #0d3b2e;
+      color: #fff;
+      padding: 0.75rem 1.15rem;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      opacity: 0;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      z-index: 50;
+      max-width: 90%;
+      text-align: center;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (max-width: 640px) {
+      .form-grid,
+      .media-row { grid-template-columns: 1fr; }
+
+      .card {
+        padding: 1.25rem 1rem;
+      }
+
+      .preview {
+        aspect-ratio: 3 / 4;
+        min-height: 320px;
+        max-height: 58vh;
+      }
+
+      .toast {
+        bottom: 0.75rem;
+        max-width: calc(100% - 2rem);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="card">
+      <a class="back" href="index.html">
+        <svg viewBox="0 0 24 24"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
+        Back to Sign In
+      </a>
+      <h1>Create Account</h1>
+      <p class="subtitle">Register as a client with Gmail, selfie, and a valid ID.</p>
+
+      <form id="regForm" class="form-grid" autocomplete="on">
+        <div class="field">
+          <label for="fullName">Full Name</label>
+          <input id="fullName" name="fullName" type="text" placeholder="Juan Dela Cruz" required />
+        </div>
+        <div class="field">
+          <label for="phone">Mobile Number</label>
+          <input id="phone" name="phone" type="tel" placeholder="+63 9XX XXX XXXX" required />
+        </div>
+
+        <div class="field span-2">
+          <label for="email">Gmail Address</label>
+          <div class="gmail-row">
+            <input id="email" name="email" type="email" placeholder="you@gmail.com" required />
+          </div>
+          <p class="hint">Use a valid Gmail address.</p>
+        </div>
+
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" placeholder="Min. 8 characters" minlength="8" required />
+        </div>
+        <div class="field">
+          <label for="idType">Valid ID Type</label>
+          <select id="idType" required>
+            <option value="">Select ID</option>
+            <option>National ID</option>
+            <option>School ID</option>
+            <option>Driver’s License</option>
+            <option>Passport</option>
+            <option>UMID / SSS</option>
+            <option>PhilHealth ID</option>
+            <option>Voter’s ID</option>
+          </select>
+        </div>
+
+        <div class="media-row">
+          <div class="media-box">
+            <h3>Camera · Selfie</h3>
+            <div class="preview" id="camPreview">
+              <video id="camVideo" autoplay playsinline muted hidden></video>
+              <img id="selfieImg" alt="Selfie preview" hidden />
+              <p class="ph" id="camPh">Open camera and capture your face</p>
+            </div>
+            <div class="media-actions">
+              <button type="button" class="btn btn-soft" id="startCam">
+                <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                Open Camera
+              </button>
+              <button type="button" class="btn btn-soft" id="captureBtn" disabled>
+                Capture
+              </button>
+            </div>
+            <canvas id="camCanvas" hidden></canvas>
+          </div>
+
+          <div class="media-box">
+            <h3>Valid ID Photo</h3>
+            <div class="preview" id="idPreview">
+              <img id="idImg" alt="ID preview" hidden />
+              <p class="ph" id="idPh">Upload a clear photo of your ID</p>
+            </div>
+            <div class="media-actions">
+              <label class="btn btn-soft" style="cursor:pointer;">
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Upload ID
+                <input type="file" id="idFile" accept="image/*" hidden />
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <p class="note">
+          After you submit, your selfie, valid ID, and Gmail will be reviewed before your client account is approved.
+        </p>
+
+        <button type="submit" class="btn btn-primary" id="submitBtn">Submit Registration</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="maslog-db.js"></script>
+  <script>
+    let stream = null;
+    let selfieData = "";
+    let idData = "";
+
+    const toast = document.getElementById("toast");
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add("show");
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => toast.classList.remove("show"), 2800);
+    }
+
+    function compressImageDataUrl(dataUrl, maxSide = 900, quality = 0.72) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.max(1, Math.round(img.width * scale));
+          canvas.height = Math.max(1, Math.round(img.height * scale));
+          canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL("image/jpeg", quality));
+        };
+        img.onerror = () => resolve(dataUrl);
+        img.src = dataUrl;
+      });
+    }
+
+    // Camera
+    document.getElementById("startCam").addEventListener("click", async () => {
+      try {
+        if (stream) stream.getTracks().forEach((t) => t.stop());
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user", width: { ideal: 720 }, height: { ideal: 960 } },
+          audio: false,
+        });
+        const video = document.getElementById("camVideo");
+        video.srcObject = stream;
+        video.hidden = false;
+        document.getElementById("selfieImg").hidden = true;
+        document.getElementById("camPh").hidden = true;
+        document.getElementById("captureBtn").disabled = false;
+      } catch (err) {
+        showToast("Camera access denied or unavailable");
+      }
+    });
+
+    document.getElementById("captureBtn").addEventListener("click", async () => {
+      const video = document.getElementById("camVideo");
+      const canvas = document.getElementById("camCanvas");
+      if (!video.srcObject) return;
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+      selfieData = await compressImageDataUrl(canvas.toDataURL("image/jpeg", 0.85));
+      const img = document.getElementById("selfieImg");
+      img.src = selfieData;
+      img.hidden = false;
+      video.hidden = true;
+      if (stream) {
+        stream.getTracks().forEach((t) => t.stop());
+        stream = null;
+      }
+      showToast("Selfie captured");
+    });
+
+    // Valid ID
+    document.getElementById("idFile").addEventListener("change", (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      if (file.size > 1.5 * 1024 * 1024) {
+        showToast("ID image too large (max 1.5MB)");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = async () => {
+        idData = await compressImageDataUrl(reader.result);
+        const img = document.getElementById("idImg");
+        img.src = idData;
+        img.hidden = false;
+        document.getElementById("idPh").hidden = true;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    document.getElementById("regForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const fullName = document.getElementById("fullName").value.trim();
+      const phone = document.getElementById("phone").value.trim();
+      const email = document.getElementById("email").value.trim().toLowerCase();
+      const password = document.getElementById("password").value;
+      const idType = document.getElementById("idType").value;
+      const submitBtn = document.getElementById("submitBtn");
+
+      if (!email.endsWith("@gmail.com")) {
+        showToast("Gmail address is required");
+        return;
+      }
+      if (!selfieData) {
+        showToast("Please capture a selfie with the camera");
+        return;
+      }
+      if (!idData || !idType) {
+        showToast("Please upload a valid ID");
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Submitting...";
+      try {
+        await MaslogDB.signUpClient({
+          fullName,
+          phone,
+          email,
+          password,
+          idType,
+          selfie: selfieData,
+          validId: idData,
+          gmailVerified: true,
+        });
+        showToast("Client registration submitted for review");
+        setTimeout(() => {
+          location.href = "index.html";
+        }, 1400);
+      } catch (err) {
+        showToast(err.message || "Failed to submit registration");
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Submit Registration";
+      }
+    });
+
+    window.addEventListener("beforeunload", () => {
+      if (stream) stream.getTracks().forEach((t) => t.stop());
+    });
+  </script>
+</body>
+</html>

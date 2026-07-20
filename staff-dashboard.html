@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Maslog Cold Spring — Staff Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --green: #2ecc71;
+      --green-dark: #27ae60;
+      --sidebar-bg: #0d3b2e;
+      --blue: #3498db;
+      --orange: #e67e22;
+      --purple: #9b59b6;
+      --yellow: #f1c40f;
+      --text: #2c3e50;
+      --text-muted: #7f8c8d;
+      --border: #eef1f4;
+      --page-bg: #f4f6f8;
+      --white: #ffffff;
+      --sidebar-w: 250px;
+      --radius: 14px;
+      --sans: "Outfit", sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      min-height: 100%;
+    }
+
+    body {
+      font-family: var(--sans);
+      color: var(--text);
+      background: var(--page-bg);
+    }
+
+    a { text-decoration: none; color: inherit; }
+    button, input { font-family: inherit; }
+
+    .shell {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ——— Sidebar ——— */
+    .sidebar {
+      width: var(--sidebar-w);
+      flex-shrink: 0;
+      background: var(--sidebar-bg);
+      padding: 1.5rem 0.85rem;
+      display: flex;
+      flex-direction: column;
+      color: #fff;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      padding: 0 0.65rem 1.4rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      margin-bottom: 0.75rem;
+    }
+
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(46, 204, 113, 0.55);
+      display: grid;
+      place-items: center;
+      background: rgba(46, 204, 113, 0.15);
+      flex-shrink: 0;
+    }
+
+    .brand-icon svg { width: 18px; height: 18px; fill: var(--green); }
+
+    .brand h1 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      line-height: 1.25;
+    }
+
+    .brand p {
+      font-size: 0.7rem;
+      color: var(--green);
+      font-weight: 500;
+      margin-top: 0.1rem;
+    }
+
+    .menu-label {
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--green);
+      padding: 0.65rem 0.85rem 0.55rem;
+    }
+
+    .nav {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+    }
+
+    .nav a {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      padding: 0.7rem 0.85rem;
+      border-radius: 10px;
+      font-size: 0.86rem;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.82);
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .nav a svg {
+      width: 17px;
+      height: 17px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+      flex-shrink: 0;
+    }
+
+    .nav a:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
+
+    .nav a.active {
+      background: var(--green-dark);
+      color: #fff;
+      font-weight: 500;
+    }
+
+    .btn-logout {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      padding: 0.7rem 0.85rem;
+      margin-top: 0.75rem;
+      border-radius: 10px;
+      font-size: 0.86rem;
+      font-weight: 500;
+      color: rgba(255, 180, 180, 0.95);
+      flex-shrink: 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding-top: 1rem;
+      transition: background 0.2s ease;
+    }
+
+    .btn-logout svg {
+      width: 17px;
+      height: 17px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+      flex-shrink: 0;
+    }
+
+    .btn-logout:hover {
+      background: rgba(192, 57, 43, 0.2);
+      color: #ffb4b4;
+    }
+
+    /* ——— Main ——— */
+    .main {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      background: var(--page-bg);
+    }
+
+    /* Hero — 3 inches tall image banner */
+    .hero {
+      position: relative;
+      height: 3in;
+      min-height: 3in;
+      padding: 1.5rem calc(1.25rem + 1in);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+      background:
+        linear-gradient(95deg, rgba(8, 40, 28, 0.55) 0%, rgba(8, 40, 28, 0.25) 50%, rgba(8, 30, 40, 0.4) 100%),
+        url("backg.png") center / cover no-repeat;
+    }
+
+    .page-title h2 {
+      font-size: clamp(1.45rem, 2.4vw, 1.85rem);
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .page-title p {
+      font-size: 0.9rem;
+      color: rgba(255, 255, 255, 0.9);
+      margin-top: 0.25rem;
+      text-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .search-group {
+      display: flex;
+      align-items: center;
+      background: var(--white);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    }
+
+    .search-group .field {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0 0.85rem;
+    }
+
+    .search-group .field svg {
+      width: 16px;
+      height: 16px;
+      stroke: #95a5a6;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    .search-group input {
+      border: none;
+      outline: none;
+      padding: 0.72rem 0;
+      font-size: 0.85rem;
+      width: 170px;
+      color: var(--text);
+    }
+
+    .search-group input::placeholder { color: #b0b8c0; }
+
+    .btn-search {
+      background: var(--green-dark);
+      color: #fff;
+      border: none;
+      padding: 0.72rem 1.15rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+    }
+
+    .btn-search:hover { background: #219150; }
+
+    .profile {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      background: var(--white);
+      border-radius: 12px;
+      padding: 0.4rem 0.9rem 0.4rem 0.4rem;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    }
+
+    .avatar-fallback {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, #76c893, #2ecc71);
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+
+    .profile strong {
+      display: block;
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+
+    .profile span {
+      font-size: 0.72rem;
+      color: var(--green-dark);
+      font-weight: 500;
+    }
+
+    .content {
+      margin-top: -4.5rem;
+      padding: 0 calc(1.25rem + 1in) 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.15rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+      padding: 1.2rem;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+    }
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+
+    .stat-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .stat-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+    }
+
+    .stat-icon svg {
+      width: 20px;
+      height: 20px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+    }
+
+    .stat-icon.green { background: #e8f8ef; color: var(--green-dark); }
+    .stat-icon.blue { background: #eaf4fc; color: var(--blue); }
+    .stat-icon.orange { background: #fef3e8; color: var(--orange); }
+    .stat-icon.purple { background: #f4eaf8; color: var(--purple); }
+
+    .badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.25rem 0.55rem;
+      border-radius: 999px;
+    }
+
+    .badge.up { background: #e8f8ef; color: var(--green-dark); }
+    .badge.down { background: #fef3e8; color: var(--orange); }
+
+    .stat h3 {
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .stat .value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.1;
+    }
+
+    .stat .meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .progress {
+      height: 6px;
+      background: #eef2f5;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 0.15rem;
+    }
+
+    .progress > span {
+      display: block;
+      height: 100%;
+      width: 78%;
+      background: linear-gradient(90deg, var(--orange), #f39c12);
+      border-radius: 999px;
+    }
+
+    .charts {
+      display: grid;
+      grid-template-columns: 1.7fr 1fr;
+      gap: 1rem;
+    }
+
+    .card-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .card-head h3 { font-size: 1.05rem; font-weight: 650; }
+
+    .card-head p {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 0.2rem;
+    }
+
+    .toggle {
+      display: flex;
+      background: #f0f3f6;
+      border-radius: 8px;
+      padding: 3px;
+    }
+
+    .toggle button {
+      border: none;
+      background: transparent;
+      padding: 0.35rem 0.75rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .toggle button.active {
+      background: var(--white);
+      color: var(--text);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    }
+
+    .chart-wrap { position: relative; height: 240px; }
+
+    .legend-row {
+      display: flex;
+      gap: 1.25rem;
+      margin-bottom: 0.75rem;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .legend-row span {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .dot.green { background: var(--green-dark); }
+    .dot.yellow { background: var(--yellow); }
+
+    .occupancy-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .donut-box {
+      position: relative;
+      width: 180px;
+      height: 180px;
+    }
+
+    .donut-center {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    .donut-center strong {
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+
+    .donut-center span {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .occ-legend {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+
+    .occ-legend li {
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.82rem;
+    }
+
+    .occ-legend .left {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .occ-legend .pct {
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .swatch.a { background: var(--green-dark); }
+    .swatch.b { background: var(--green); }
+    .swatch.c { background: #d5dce3; }
+
+    .tx-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+
+    .tx-tools {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+    }
+
+    .mini-search {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      background: #f4f6f8;
+      border-radius: 8px;
+      padding: 0.5rem 0.75rem;
+    }
+
+    .mini-search svg {
+      width: 15px;
+      height: 15px;
+      stroke: #95a5a6;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    .mini-search input {
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 0.8rem;
+      width: 140px;
+      color: var(--text);
+    }
+
+    .btn-filter {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      border: 1px solid #dde3ea;
+      background: var(--white);
+      border-radius: 8px;
+      padding: 0.5rem 0.85rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .btn-filter svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 780px;
+    }
+
+    th {
+      text-align: left;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 0.65rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 0.9rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.88rem;
+      vertical-align: middle;
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    .id-cell { font-weight: 600; }
+
+    .customer {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    .customer .av {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #fff;
+      background: var(--blue);
+      flex-shrink: 0;
+    }
+
+    .customer strong {
+      display: block;
+      font-size: 0.86rem;
+      font-weight: 600;
+    }
+
+    .customer small {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .tag {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.3rem 0.65rem;
+      border-radius: 999px;
+    }
+
+    .tag.cottage { background: #fef3e8; color: var(--orange); }
+    .tag.entrance { background: #eaf4fc; color: var(--blue); }
+    .tag.verified { background: #e8f8ef; color: var(--green-dark); }
+    .tag.pending { background: #fff8e6; color: #d68910; }
+
+    .qr-cell {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+
+    .qr-cell svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.7;
+    }
+
+    .actions { display: flex; gap: 0.35rem; }
+
+    .actions button {
+      width: 32px;
+      height: 32px;
+      border: 1px solid var(--border);
+      background: #f8fafb;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      color: var(--text-muted);
+    }
+
+    .actions button:hover {
+      color: var(--green-dark);
+      border-color: var(--green);
+    }
+
+    .actions button svg {
+      width: 15px;
+      height: 15px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+    }
+
+    @media (max-width: 1200px) {
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .charts { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 900px) {
+      .shell { flex-direction: column; }
+      .sidebar {
+        width: 100%;
+        height: auto;
+        position: static;
+      }
+      .nav {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .btn-logout { margin-top: 0.5rem; grid-column: 1 / -1; }
+      .hero { padding: 1.25rem 1.25rem 4rem; }
+      .content { padding: 0 1.25rem 1.5rem; }
+    }
+
+    @media (max-width: 560px) {
+      .stats { grid-template-columns: 1fr; }
+      .nav { grid-template-columns: 1fr; }
+      .search-group input { width: 110px; }
+    }
+  </style>
+  <link rel="stylesheet" href="admin-extra.css?v=5" />
+  <link rel="stylesheet" href="date-range.css?v=2" />
+  <script>localStorage.setItem("portal", "staff");</script>
+  <script src="portal-nav.js" defer></script>
+  <script src="admin-logout.js" defer></script>
+  <script src="date-range.js?v=2" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M17 8C8 10 5.9 16.17 3.82 21.67L5.71 22l1-2.3A24.09 24.09 0 0 0 12 17c5-3 7-8 7-11a3 3 0 0 0-2-2.82M9.09 17c2.46-2.71 4.91-4.94 8.54-6.68C16.91 14.87 13.54 16.62 9.09 17m8.4-11.57A1 1 0 0 1 19 6c0 1.91-1.02 5.07-3.16 7.72C12.91 10.35 10.18 8.29 6.39 7.41c1.56-.57 3.28-.91 5.11-.91 2.2 0 4.34.46 6-.1Z"/></svg>
+        </div>
+        <div>
+          <h1>Maslog Cold Spring</h1>
+          <p>Staff Portal</p>
+        </div>
+      </div>
+
+      <p class="menu-label">Main Menu</p>
+      <nav class="nav">
+        <a class="active" href="staff-dashboard.html">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+          Dashboard
+        </a>
+        <a href="walk-in-transaction.html">
+          <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+          Walk-in Transaction
+        </a>
+        <a href="online-booking.html">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
+          Online Booking
+        </a>
+        <a href="transaction-history.html">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Sales History
+        </a>
+        <a href="qr-verification.html">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3"/><path d="M14 17h7"/><path d="M17 14v7"/></svg>
+          QR Verification
+        </a>
+        <a href="staff-fees.html">
+          <svg viewBox="0 0 24 24"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          Online Booking Setup
+        </a>
+        <a href="user-management.html"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          User Management
+        </a>
+      </nav>
+      <a class="btn-logout" href="index.html">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Log-Out
+      </a>
+    </aside>
+
+    <main class="main">
+      <header class="hero">
+        <div class="page-title">
+          <h2>Staff Dashboard</h2>
+          <p>Overview of resort operations and revenue.</p>
+        </div>
+        <div class="top-actions">
+          <form class="search-group" onsubmit="return false;">
+            <div class="field">
+              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input type="search" placeholder="search transaction" aria-label="Search transaction" />
+            </div>
+            <button class="btn-search" type="submit">SEARCH</button>
+          </form>
+          <div class="profile">
+            <div class="avatar-fallback" aria-hidden="true">NF</div>
+            <div>
+              <strong>Neneth Fabilla</strong>
+              <span>Staff</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div class="content">
+        <div class="date-range-bar" data-date-range data-default="day" data-filter-table="#txBody">
+          <div class="filter-field date-range-field" style="margin:0;">
+            <label style="font-size:0.72rem;font-weight:600;color:#7f8c8d;text-transform:uppercase;letter-spacing:0.04em;display:block;margin-bottom:0.35rem;">Date Range</label>
+            <div class="date-range">
+              <select data-preset-select aria-label="Date range">
+                <option value="day">Day</option>
+                <option value="week">Week</option>
+                <option value="month">Month</option>
+                <option value="custom">Custom</option>
+              </select>
+              <div class="date-range-custom">
+                <input type="date" data-from aria-label="From date" />
+                <span>to</span>
+                <input type="date" data-to aria-label="To date" />
+              </div>
+              <p class="date-range-label" data-label></p>
+            </div>
+          </div>
+        </div>
+
+        <section class="stats" aria-label="Key metrics">
+          <article class="card stat">
+            <div class="stat-top">
+              <div class="stat-icon green">
+                <svg viewBox="0 0 24 24"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+              </div>
+              <span class="badge up">+12.5%</span>
+            </div>
+            <h3>Total Revenue</h3>
+            <p class="value" id="statTotalRevenue">0</p>
+            <p class="meta" id="statTotalMeta">Selected range</p>
+          </article>
+
+          <article class="card stat">
+            <div class="stat-top">
+              <div class="stat-icon blue">
+                <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+              <span class="badge up">+8.2%</span>
+            </div>
+            <h3>Entrance Fees</h3>
+            <p class="value" id="statEntranceFees">0</p>
+            <p class="meta" id="statVisitors">0 Visitors</p>
+          </article>
+
+          <article class="card stat">
+            <div class="stat-top">
+              <div class="stat-icon orange">
+                <svg viewBox="0 0 24 24"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z"/><path d="M9 21V12h6v9"/></svg>
+              </div>
+              <span class="badge down">-2.1%</span>
+            </div>
+            <h3>Property Rentals</h3>
+            <p class="value" id="statPropertyRentals">0</p>
+            <p class="meta" id="statPropertyMeta">0 Transactions</p>
+            <div class="progress" aria-hidden="true"><span></span></div>
+          </article>
+
+          <article class="card stat">
+            <div class="stat-top">
+              <div class="stat-icon purple">
+                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3"/><path d="M14 17h7"/><path d="M17 14v7"/></svg>
+              </div>
+              <span class="badge up">+24%</span>
+            </div>
+            <h3>QR Verifications</h3>
+            <p class="value" id="statQrVerifications">0</p>
+            <p class="meta" id="statQrMeta">Selected range</p>
+          </article>
+        </section>
+
+        <section class="charts" aria-label="Analytics">
+          <article class="card">
+            <div class="card-head">
+              <div>
+                <h3>Revenue Trends</h3>
+                <p>Weekly breakdown of income sources.</p>
+              </div>
+              <div class="toggle" role="group" aria-label="Chart period">
+                <button type="button" class="active" data-period="weekly">Weekly</button>
+                <button type="button" data-period="monthly">Monthly</button>
+              </div>
+            </div>
+            <div class="legend-row">
+              <span><i class="dot green"></i> Total Revenue</span>
+              <span><i class="dot yellow"></i> Property Rentals</span>
+            </div>
+            <div class="chart-wrap">
+              <canvas id="revenueChart"></canvas>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-head">
+              <div>
+                <h3>Cottage Occupancy</h3>
+                <p>Current booking status.</p>
+              </div>
+            </div>
+            <div class="occupancy-wrap">
+              <div class="donut-box">
+                <canvas id="occupancyChart"></canvas>
+                <div class="donut-center">
+                  <strong>80%</strong>
+                  <span>Booked</span>
+                </div>
+              </div>
+              <ul class="occ-legend">
+                <li>
+                  <span class="left"><i class="swatch a"></i> Large Family</span>
+                  <span class="pct">45%</span>
+                </li>
+                <li>
+                  <span class="left"><i class="swatch b"></i> Standard</span>
+                  <span class="pct">35%</span>
+                </li>
+                <li>
+                  <span class="left"><i class="swatch c"></i> Available</span>
+                  <span class="pct">20%</span>
+                </li>
+              </ul>
+            </div>
+          </article>
+        </section>
+
+        <section class="card" aria-label="Recent transactions">
+          <div class="tx-head">
+            <div>
+              <h3>Recent Transactions</h3>
+              <p style="font-size:0.78rem;color:var(--text-muted);margin-top:0.2rem;">Latest bookings and entrance payments.</p>
+            </div>
+            <div class="tx-tools">
+              <div class="mini-search">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="search" id="txSearch" placeholder="Search ID or Name..." aria-label="Search transactions" />
+              </div>
+              <button type="button" class="btn-filter">
+                <svg viewBox="0 0 24 24"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+                Filter
+              </button>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Transaction ID</th>
+                  <th>Customer</th>
+                  <th>Type</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>QR Code</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="txBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="maslog-db.js"></script>
+  <script>
+    const weeklyLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    const weeklyRevenue = [0, 0, 0, 0, 0, 0, 0];
+    const weeklyProperties = [0, 0, 0, 0, 0, 0, 0];
+    const monthFormatter = new Intl.DateTimeFormat("en-US", { month: "short" });
+    const monthlyLabels = Array.from({ length: 6 }, (_, i) => {
+      const now = new Date();
+      return monthFormatter.format(new Date(now.getFullYear(), now.getMonth() - 5 + i, 1));
+    });
+    const monthlyRevenue = [0, 0, 0, 0, 0, 0];
+    const monthlyProperties = [0, 0, 0, 0, 0, 0];
+
+    const revenueChart = new Chart(document.getElementById("revenueChart"), {
+      type: "line",
+      data: {
+        labels: weeklyLabels,
+        datasets: [
+          {
+            label: "Total Revenue",
+            data: weeklyRevenue,
+            borderColor: "#27ae60",
+            backgroundColor: "rgba(39, 174, 96, 0.12)",
+            fill: true,
+            tension: 0.4,
+            borderWidth: 2.5,
+            pointRadius: 4,
+            pointBackgroundColor: "#27ae60",
+          },
+          {
+            label: "Property Rentals",
+            data: weeklyProperties,
+            borderColor: "#f1c40f",
+            backgroundColor: "transparent",
+            fill: false,
+            tension: 0.4,
+            borderWidth: 2.5,
+            pointRadius: 4,
+            pointBackgroundColor: "#f1c40f",
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: { label: (ctx) => " ₱" + ctx.parsed.y.toLocaleString() },
+          },
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { color: "#95a5a6", font: { family: "Outfit", size: 12 } },
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: "#eef1f4" },
+            ticks: {
+              color: "#95a5a6",
+              font: { family: "Outfit", size: 12 },
+              callback: (v) => "₱" + (v / 1000) + "k",
+            },
+          },
+        },
+      },
+    });
+
+    document.querySelectorAll(".toggle button").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".toggle button").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        updateRevenueChart(filteredTransactions());
+      });
+    });
+
+    new Chart(document.getElementById("occupancyChart"), {
+      type: "doughnut",
+      data: {
+        labels: ["Large Family", "Standard", "Available"],
+        datasets: [{
+          data: [45, 35, 20],
+          backgroundColor: ["#27ae60", "#2ecc71", "#d5dce3"],
+          borderWidth: 0,
+          hoverOffset: 4,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: "72%",
+        plugins: { legend: { display: false } },
+      },
+    });
+
+    const txSearch = document.getElementById("txSearch");
+    const headerSearch = document.querySelector(".top-actions .search-group input[type='search']");
+    const txBody = document.getElementById("txBody");
+    let dashboardTransactions = [];
+    let dashboardQrVerifications = [];
+
+    function money(n) {
+      return MaslogDB.formatMoney ? MaslogDB.formatMoney(n) : "PHP " + Number(n || 0).toLocaleString("en-PH");
+    }
+
+    function dateText(value) {
+      if (!value) return "";
+      return new Date(value).toLocaleDateString("en-PH", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+    }
+
+    function dateKey(value) {
+      if (!value) return "";
+      const raw = String(value);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return raw.slice(0, 10);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+
+    function tagClass(source, status) {
+      const s = String(status || "").toLowerCase();
+      if (source === "Online Booking") return "cottage";
+      if (s === "completed" || s === "paid" || s === "confirmed") return "verified";
+      if (s === "pending") return "pending";
+      return "entrance";
+    }
+
+    function parseLocalDateKey(key) {
+      if (!key) return null;
+      const [y, m, d] = String(key).slice(0, 10).split("-").map(Number);
+      if (!y || !m || !d) return null;
+      return new Date(y, m - 1, d);
+    }
+
+    function getActiveRange() {
+      const root = document.querySelector("[data-date-range]");
+      const from = parseLocalDateKey(root?.dataset.from);
+      const to = parseLocalDateKey(root?.dataset.to);
+      if (to) to.setHours(23, 59, 59, 999);
+      return { from, to };
+    }
+
+    function isInActiveRange(tx) {
+      const { from, to } = getActiveRange();
+      if (!from || !to) return true;
+      const d = parseLocalDateKey(dateKey(tx.date));
+      return !!d && d >= from && d <= to;
+    }
+
+    function filteredTransactions() {
+      const q = String(txSearch.value || headerSearch?.value || "").toLowerCase().trim();
+      return dashboardTransactions.filter((t) => {
+        const matchesText = !q || [t.code, t.customer, t.source, t.type, t.status].join(" ").toLowerCase().includes(q);
+        return matchesText && isInActiveRange(t);
+      });
+    }
+
+    function isRevenueStatus(status) {
+      const s = String(status || "").toLowerCase();
+      return !["cancelled", "rejected", "void", "refunded", "pending"].includes(s);
+    }
+
+    function filteredQrVerifications() {
+      const { from, to } = getActiveRange();
+      return dashboardQrVerifications.filter((q) => {
+        if (!from || !to) return true;
+        const d = parseLocalDateKey(dateKey(q.date));
+        return !!d && d >= from && d <= to;
+      });
+    }
+
+    function setText(id, value) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    }
+
+    function updateStats(list) {
+      const revenueRows = list.filter((t) => isRevenueStatus(t.status));
+      const totalRevenue = revenueRows.reduce((sum, t) => sum + Number(t.total || 0), 0);
+      const entranceTotal = revenueRows.reduce((sum, t) => sum + Number(t.entranceTotal || 0), 0);
+      const propertyTotal = revenueRows.reduce((sum, t) => sum + Number(t.propertyTotal || 0), 0);
+      const visitors = revenueRows.reduce((sum, t) => sum + Number(t.visitorCount || 0), 0);
+      const propertyTx = revenueRows.filter((t) => Number(t.propertyTotal || 0) > 0).length;
+      const qrRows = filteredQrVerifications();
+
+      setText("statTotalRevenue", money(totalRevenue));
+      setText("statTotalMeta", `${revenueRows.length} paid transaction${revenueRows.length === 1 ? "" : "s"}`);
+      setText("statEntranceFees", money(entranceTotal));
+      setText("statVisitors", `${visitors.toLocaleString("en-PH")} Visitor${visitors === 1 ? "" : "s"}`);
+      setText("statPropertyRentals", money(propertyTotal));
+      setText("statPropertyMeta", `${propertyTx} Transaction${propertyTx === 1 ? "" : "s"}`);
+      setText("statQrVerifications", String(qrRows.length));
+      setText("statQrMeta", `${qrRows.filter((q) => q.status === "valid").length} Valid Scan${qrRows.length === 1 ? "" : "s"}`);
+    }
+
+    function updateRevenueChart(list) {
+      const revenueRows = list.filter((t) => isRevenueStatus(t.status));
+      const activePeriod = document.querySelector(".toggle button.active")?.dataset.period || "weekly";
+      const labels = activePeriod === "weekly" ? weeklyLabels : monthlyLabels;
+      const revenue = labels.map(() => 0);
+      const property = labels.map(() => 0);
+      const today = new Date();
+
+      revenueRows.forEach((t) => {
+        const d = parseLocalDateKey(dateKey(t.date));
+        if (!d) return;
+        let idx = -1;
+        if (activePeriod === "weekly") {
+          idx = d.getDay() === 0 ? 6 : d.getDay() - 1;
+        } else {
+          idx = d.getMonth() - Math.max(0, today.getMonth() - 5);
+        }
+        if (idx < 0 || idx >= labels.length) return;
+        revenue[idx] += Number(t.total || 0);
+        property[idx] += Number(t.propertyTotal || 0);
+      });
+
+      revenueChart.data.labels = labels;
+      revenueChart.data.datasets[0].data = revenue;
+      revenueChart.data.datasets[1].data = property;
+      revenueChart.update();
+    }
+
+    function renderRows(list, emptyText = "No transactions found for this filter") {
+      updateStats(list);
+      updateRevenueChart(list);
+      if (!list.length) {
+        txBody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#6b7280;padding:1.2rem;">${emptyText}</td></tr>`;
+        return;
+      }
+
+      txBody.innerHTML = list.map((t) => {
+        const cls = tagClass(t.source, t.status);
+        const date = dateKey(t.date);
+        return `
+          <tr data-date="${date}">
+            <td class="id-cell">${t.code || ""}</td>
+            <td>
+              <div class="customer">
+                <div class="av">${MaslogDB.initials ? MaslogDB.initials(t.customer) : "MC"}</div>
+                <div>
+                  <strong>${t.customer || ""}</strong>
+                  <small>${dateText(t.date)}</small>
+                </div>
+              </div>
+            </td>
+            <td><span class="tag ${cls}">${t.source || ""}</span></td>
+            <td>${money(t.total)}</td>
+            <td><span class="tag ${cls}">${t.status || ""}</span></td>
+            <td><span class="qr-cell">${t.code || "-"}</span></td>
+            <td><div class="actions"><button type="button" title="View" aria-label="View"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></td>
+          </tr>`;
+      }).join("");
+    }
+
+    async function loadDashboardTransactions() {
+      try {
+        dashboardTransactions = await MaslogDB.listAdminTransactions();
+        try {
+          dashboardQrVerifications = MaslogDB.listQrVerifications ? await MaslogDB.listQrVerifications() : [];
+        } catch {
+          dashboardQrVerifications = [];
+        }
+        renderRows(filteredTransactions(), "No transactions found for selected date range");
+      } catch (err) {
+        txBody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#b42318;padding:1.2rem;">${err.message || "Failed to load transactions"}</td></tr>`;
+      }
+    }
+
+    function applyTextFilter(value) {
+      renderRows(filteredTransactions());
+    }
+
+    txSearch.addEventListener("input", () => {
+      if (headerSearch) headerSearch.value = txSearch.value;
+      applyTextFilter(txSearch.value);
+    });
+
+    headerSearch?.addEventListener("input", () => {
+      txSearch.value = headerSearch.value;
+      applyTextFilter(headerSearch.value);
+    });
+
+    document.querySelector("[data-date-range]")?.addEventListener("daterangechange", (e) => {
+      renderRows(filteredTransactions(), "No transactions found for selected date range");
+    });
+
+    loadDashboardTransactions();
+  </script>
+</body>
+</html>
+
+
+

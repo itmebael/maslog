@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Maslog Cold Spring — Customer Service</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root { --green-deep:#0d3b2e; --green-mid:#2d6a4f; --green-mint:#e8f5e9; --text:#1a2e24; --text-muted:#6b7c74; --bg:#f6f8f6; --white:#fff; --serif:"Cormorant Garamond",Georgia,serif; --sans:"Outfit",sans-serif; --radius:18px; }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);display:flex;justify-content:center;min-height:100vh}
+    a{text-decoration:none;color:inherit}
+    button{font-family:inherit;border:none;cursor:pointer;background:none}
+    .phone{width:100%;max-width:430px;min-height:100vh;padding:0 1.15rem 1.5rem}
+    .page-bar{position:sticky;top:0;z-index:20;display:grid;grid-template-columns:44px 1fr 44px;align-items:center;padding:1rem 0 .85rem;background:rgba(246,248,246,.92);backdrop-filter:blur(12px)}
+    .back-btn{width:42px;height:42px;border-radius:50%;background:var(--white);display:grid;place-items:center;box-shadow:0 4px 14px rgba(13,59,46,.08);color:var(--green-deep)}
+    .page-bar h1{font-family:var(--serif);font-size:1.35rem;text-align:center;color:var(--green-deep)}
+    .intro{font-size:.88rem;color:var(--text-muted);line-height:1.5;margin-bottom:1rem}
+    .card{background:var(--white);border-radius:var(--radius);padding:1.1rem;box-shadow:0 6px 20px rgba(13,59,46,.06);margin-bottom:.85rem;display:flex;gap:.85rem;align-items:flex-start}
+    .card-icon{width:48px;height:48px;border-radius:14px;background:var(--green-mint);color:var(--green-deep);display:grid;place-items:center;flex-shrink:0}
+    .card-icon svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8}
+    .card strong{display:block;font-size:.95rem;color:var(--green-deep);margin-bottom:.2rem}
+    .card p{font-size:.82rem;color:var(--text-muted);line-height:1.45}
+    .card a{color:var(--green-mid);font-weight:600}
+    .faq h3{font-size:.95rem;color:var(--green-deep);margin-bottom:.65rem}
+    .faq details{background:var(--white);border-radius:14px;padding:.75rem .9rem;margin-bottom:.5rem;box-shadow:0 4px 14px rgba(13,59,46,.05)}
+    .faq summary{font-weight:600;font-size:.88rem;cursor:pointer;color:var(--green-deep)}
+    .faq p{margin-top:.5rem;font-size:.8rem;color:var(--text-muted);line-height:1.45}
+    @media(min-width:431px){body{padding:1rem 0;background:#e8eee9}.phone{border-radius:28px;box-shadow:0 20px 50px rgba(13,59,46,.12);background:var(--bg)}}
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <header class="page-bar">
+      <a class="back-btn" href="user-dashboard.html" aria-label="Back"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></a>
+      <h1>Customer Service</h1><span></span>
+    </header>
+
+    <p class="intro">Need help with your booking, payment, or account? Reach our team using the contact details below.</p>
+
+    <div id="contactCards"></div>
+
+    <section class="faq" style="margin-top:1rem;">
+      <h3>Common Questions</h3>
+      <details><summary>How do I cancel a booking?</summary><p>Contact customer service at least 24 hours before your booking date. Cancellations are subject to our refund policy.</p></details>
+      <details><summary>What if I miss my booking date?</summary><p id="faqNoShow">10% of your payment will not be refunded if you fail to arrive on your confirmed date without prior notice.</p></details>
+      <details><summary>How long does approval take?</summary><p>Online bookings are reviewed by staff within 24 hours. Check My Bookings for status updates.</p></details>
+    </section>
+  </div>
+
+  <script src="user-app.js"></script>
+  <script>
+    const cs = MaslogUser.loadSettings().customerService;
+    const cards = [
+      { icon: '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>', title: "Phone", text: `<a href="tel:${cs.phone.replace(/\s/g,"")}">${cs.phone}</a>` },
+      { icon: '<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>', title: "Email", text: `<a href="mailto:${cs.email}">${cs.email}</a>` },
+      { icon: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>', title: "Hours", text: cs.hours },
+      { icon: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>', title: "Messenger", text: cs.messenger },
+    ];
+    document.getElementById("contactCards").innerHTML = cards.map((c) => `
+      <div class="card">
+        <div class="card-icon"><svg viewBox="0 0 24 24">${c.icon}</svg></div>
+        <div><strong>${c.title}</strong><p>${c.text}</p></div>
+      </div>`).join("");
+    document.getElementById("faqNoShow").textContent = MaslogUser.loadSettings().agreement;
+  </script>
+</body>
+</html>

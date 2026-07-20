@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Revenue Reports — Maslog Cold Spring</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="admin.css?v=6" />
+  <link rel="stylesheet" href="admin-extra.css?v=5" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script>try{const s=JSON.parse(localStorage.getItem("maslog_session_v2")||"null");localStorage.setItem("portal",s?.role==="staff"?"staff":"admin");}catch{localStorage.setItem("portal","admin");}</script>
+  <script src="portal-nav.js" defer></script>
+  <script src="admin-logout.js" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M17 8C8 10 5.9 16.17 3.82 21.67L5.71 22l1-2.3A24.09 24.09 0 0 0 12 17c5-3 7-8 7-11a3 3 0 0 0-2-2.82M9.09 17c2.46-2.71 4.91-4.94 8.54-6.68C16.91 14.87 13.54 16.62 9.09 17m8.4-11.57A1 1 0 0 1 19 6c0 1.91-1.02 5.07-3.16 7.72C12.91 10.35 10.18 8.29 6.39 7.41c1.56-.57 3.28-.91 5.11-.91 2.2 0 4.34.46 6-.1Z"/></svg>
+        </div>
+        <div>
+          <h1>Maslog Cold Spring</h1>
+          <p>Admin Portal</p>
+        </div>
+      </div>
+      <p class="menu-label">Main Menu</p>
+      <nav class="nav">
+        <a href="admin-dashboard.html"><svg viewBox="0 0 24 24"><path d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M12 2v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="M2 12h2"/><path d="m4.93 19.07 1.41-1.41"/><path d="M19.07 4.93l-1.41 1.41"/><path d="M20 12h2"/><path d="M12 20v2"/><path d="m16 16 3 3"/><path d="M12 13v5"/></svg>Dashboard</a>
+        <a href="staff-account.html"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Staff Account</a>
+        <a href="user-management.html"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>User Management</a>
+        <a href="sales-monitoring.html"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>Sales Monitoring</a>
+        <a class="active" href="revenue-report.html"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>Revenue Report</a>
+        <a href="online-booking.html"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>Online Booking</a>
+        <a href="walk-in-transaction.html"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>Walk-In Transaction</a>
+        <a href="transaction-history.html"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Transaction History</a>
+        <a href="system-configuration.html"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v2"/><path d="M12 21v2"/><path d="m4.22 4.22 1.42 1.42"/><path d="m18.36 18.36 1.42 1.42"/><path d="M1 12h2"/><path d="M21 12h2"/><path d="m4.22 19.78 1.42-1.42"/><path d="m18.36 5.64 1.42-1.42"/></svg>System Configuration</a>
+        </nav>
+      <a class="btn-logout" href="index.html"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Log-Out</a>
+    </aside>
+
+    <main class="main">
+      <header class="hero">
+        <div class="page-title">
+          <h2>Revenue Reports</h2>
+          <p>As of May 2026 — entrance, cottages, and daily averages</p>
+        </div>
+        <div class="top-actions">
+          <form class="search-group" onsubmit="return false;">
+            <div class="field">
+              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input type="search" placeholder="Search report..." />
+            </div>
+            <button class="btn-search" type="submit">SEARCH</button>
+          </form>
+          <div class="profile">
+            <div class="avatar-fallback">AB</div>
+            <div><strong>Arianne B.</strong><span>Administrator</span></div>
+          </div>
+        </div>
+      </header>
+
+      <div class="content">
+        <section class="stats-row cols-4">
+          <article class="stat-card colored blue">
+            <p class="label">Total Revenue</p>
+            <p class="value">₱203,150</p>
+          </article>
+          <article class="stat-card colored green">
+            <p class="label">Entrance Fees Total</p>
+            <p class="value">₱101,200</p>
+          </article>
+          <article class="stat-card colored teal">
+            <p class="label">Cottage Rentals Total</p>
+            <p class="value">₱101,950</p>
+          </article>
+          <article class="stat-card colored orange">
+            <p class="label">Average Daily Sales</p>
+            <p class="value">₱18,468</p>
+          </article>
+        </section>
+
+        <section class="card">
+          <div class="section-head" style="margin-bottom:1rem;">
+            <div>
+              <h2 style="font-size:1.1rem;">Revenue Trends</h2>
+              <p>Entrance, cottages, and total sales</p>
+            </div>
+            <div class="toggle" role="group">
+              <button type="button" class="active" data-view="area">Area</button>
+              <button type="button" data-view="bar">Bar</button>
+            </div>
+          </div>
+          <div class="legend-row">
+            <span><i class="dot blue"></i> Entrance Fees</span>
+            <span><i class="dot green"></i> Cottage Rentals</span>
+            <span><i class="dot yellow"></i> Total Sales</span>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="trendChart"></canvas>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="section-head" style="margin-bottom:1rem;">
+            <div>
+              <h2 style="font-size:1.1rem;">Revenue Breakdown</h2>
+              <p>Daily comparison vs previous day</p>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Entrance Fees</th>
+                  <th>Cottage Rentals</th>
+                  <th>Total Sales</th>
+                  <th>Vs. Prev Day</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+  <script>
+    const labels = ["Day 1", "Day 2", "Day 3", "Day 4", "Day 5", "Day 6", "Day 7"];
+    const entrance = [0, 0, 0, 0, 0, 0, 0];
+    const cottages = [0, 0, 0, 0, 0, 0, 0];
+    const total = entrance.map((v, i) => v + cottages[i]);
+
+    const chart = new Chart(document.getElementById("trendChart"), {
+      type: "line",
+      data: {
+        labels,
+        datasets: [
+          {
+            label: "Entrance Fees",
+            data: entrance,
+            borderColor: "#3498db",
+            backgroundColor: "rgba(52, 152, 219, 0.18)",
+            fill: true,
+            tension: 0.4,
+            borderWidth: 2,
+          },
+          {
+            label: "Cottage Rentals",
+            data: cottages,
+            borderColor: "#27ae60",
+            backgroundColor: "rgba(39, 174, 96, 0.14)",
+            fill: true,
+            tension: 0.4,
+            borderWidth: 2,
+          },
+          {
+            label: "Total Sales",
+            data: total,
+            borderColor: "#f1c40f",
+            backgroundColor: "transparent",
+            fill: false,
+            tension: 0.4,
+            borderWidth: 2,
+            borderDash: [6, 4],
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { family: "Outfit" } } },
+          y: {
+            beginAtZero: true,
+            grid: { color: "#eef1f4" },
+            ticks: {
+              font: { family: "Outfit" },
+              callback: (v) => "₱" + (v / 1000) + "k",
+            },
+          },
+        },
+      },
+    });
+
+    document.querySelectorAll(".toggle button").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".toggle button").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        const view = btn.dataset.view;
+        chart.config.type = view === "bar" ? "bar" : "line";
+        chart.data.datasets.forEach((ds, i) => {
+          ds.fill = view === "area" && i < 2;
+          ds.borderDash = i === 2 && view === "area" ? [6, 4] : undefined;
+        });
+        chart.update();
+      });
+    });
+  </script>
+</body>
+</html>
+

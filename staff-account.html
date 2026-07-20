@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manage Staff Accounts — Maslog Cold Spring</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="admin.css?v=6" />
+  <link rel="stylesheet" href="admin-extra.css?v=5" />
+  <script>try{const s=JSON.parse(localStorage.getItem("maslog_session_v2")||"null");localStorage.setItem("portal",s?.role==="staff"?"staff":"admin");}catch{localStorage.setItem("portal","admin");}</script>
+  <script src="portal-nav.js" defer></script>
+  <script src="admin-logout.js" defer></script>
+  <style>
+    .staff-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(8, 28, 18, 0.55);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 1rem;
+    }
+    .staff-modal-overlay.open { display: flex; }
+    .staff-modal {
+      background: #fff;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 560px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+      transform: translateY(12px) scale(0.96);
+      transition: transform 0.2s ease;
+    }
+    .staff-modal-overlay.open .staff-modal {
+      transform: translateY(0) scale(1);
+    }
+    .staff-modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.25rem 1.35rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .staff-modal-head h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #2c3e50;
+    }
+    .staff-modal-head button {
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: 50%;
+      background: #f0f3f6;
+      cursor: pointer;
+      font-size: 1.2rem;
+      line-height: 1;
+      color: #7f8c8d;
+    }
+    .staff-modal form {
+      padding: 1.1rem 1.35rem 1.35rem;
+    }
+    .staff-modal-actions {
+      display: flex;
+      gap: 0.65rem;
+      justify-content: flex-end;
+      margin-top: 0.5rem;
+    }
+    .toast-staff {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      background: var(--green-dark);
+      color: #fff;
+      padding: 0.7rem 1.1rem;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      z-index: 10000;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: 0.2s;
+      pointer-events: none;
+    }
+    .toast-staff.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M17 8C8 10 5.9 16.17 3.82 21.67L5.71 22l1-2.3A24.09 24.09 0 0 0 12 17c5-3 7-8 7-11a3 3 0 0 0-2-2.82M9.09 17c2.46-2.71 4.91-4.94 8.54-6.68C16.91 14.87 13.54 16.62 9.09 17m8.4-11.57A1 1 0 0 1 19 6c0 1.91-1.02 5.07-3.16 7.72C12.91 10.35 10.18 8.29 6.39 7.41c1.56-.57 3.28-.91 5.11-.91 2.2 0 4.34.46 6-.1Z"/></svg>
+        </div>
+        <div>
+          <h1>Maslog Cold Spring</h1>
+          <p>Admin Portal</p>
+        </div>
+      </div>
+      <p class="menu-label">Main Menu</p>
+      <nav class="nav">
+        <a href="admin-dashboard.html"><svg viewBox="0 0 24 24"><path d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M12 2v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="M2 12h2"/><path d="m4.93 19.07 1.41-1.41"/><path d="M19.07 4.93l-1.41 1.41"/><path d="M20 12h2"/><path d="M12 20v2"/><path d="m16 16 3 3"/><path d="M12 13v5"/></svg>Dashboard</a>
+        <a class="active" href="staff-account.html"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Staff Account</a>
+        <a href="user-management.html"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>User Management</a>
+        <a href="sales-monitoring.html"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>Sales Monitoring</a>
+        <a href="revenue-report.html"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>Revenue Report</a>
+        <a href="online-booking.html"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>Online Booking</a>
+        <a href="walk-in-transaction.html"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>Walk-In Transaction</a>
+        <a href="transaction-history.html"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Transaction History</a>
+        <a href="system-configuration.html"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v2"/><path d="M12 21v2"/><path d="m4.22 4.22 1.42 1.42"/><path d="m18.36 18.36 1.42 1.42"/><path d="M1 12h2"/><path d="M21 12h2"/><path d="m4.22 19.78 1.42-1.42"/><path d="m18.36 5.64 1.42-1.42"/></svg>System Configuration</a>
+        </nav>
+      <a class="btn-logout" href="index.html"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Log-Out</a>
+    </aside>
+
+    <main class="main">
+      <header class="hero">
+        <div class="page-title">
+          <h2>Manage Staff Accounts</h2>
+          <p>Create, update, and manage cashier accounts.</p>
+        </div>
+        <div class="top-actions">
+          <form class="search-group" onsubmit="return false;">
+            <div class="field">
+              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input type="search" placeholder="Search staff..." />
+            </div>
+            <button class="btn-search" type="submit">SEARCH</button>
+          </form>
+          <div class="profile">
+            <div class="avatar-fallback">AB</div>
+            <div><strong>Arianne B.</strong><span>Administrator</span></div>
+          </div>
+        </div>
+      </header>
+
+      <div class="content">
+        <section class="stats-row cols-3">
+          <article class="stat-card">
+            <div class="stat-icon icon-green"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+            <p class="label">Total Accounts</p>
+            <p class="value" id="statTotal">0</p>
+          </article>
+          <article class="stat-card">
+            <div class="stat-icon icon-purple"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+            <p class="label">Admins</p>
+            <p class="value" id="statAdmins">0</p>
+          </article>
+          <article class="stat-card">
+            <div class="stat-icon icon-blue"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><circle cx="12" cy="14" r="2"/></svg></div>
+            <p class="label">Staff</p>
+            <p class="value" id="statCashiers">0</p>
+          </article>
+        </section>
+
+        <div class="section-head">
+          <div class="content-title">
+            <h2>Staff Directory</h2>
+            <p>All admin and staff accounts</p>
+          </div>
+          <button type="button" class="btn btn-primary" id="btnAddStaff">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Staff
+          </button>
+        </div>
+
+        <section class="card">
+          <div class="table-tools">
+            <div class="mini-search">
+              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input type="search" id="staffSearch" placeholder="Search by name or email..." />
+            </div>
+            <select id="roleFilter" aria-label="Filter by role">
+              <option value="all">All Roles</option>
+              <option value="Admin">Admin</option>
+              <option value="Staff">Staff</option>
+            </select>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th><input class="checkbox" type="checkbox" aria-label="Select all" /></th>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Date Created</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="staffBody"></tbody>
+            </table>
+          </div>
+
+          <div class="pagination">
+            <p class="info" id="pageInfo">Showing accounts</p>
+            <div class="pages">
+              <button type="button" aria-label="Previous">‹</button>
+              <button type="button" class="active">1</button>
+              <button type="button">2</button>
+              <button type="button" aria-label="Next">›</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div class="staff-modal-overlay" id="staffModal" role="dialog" aria-modal="true" aria-labelledby="staffModalTitle">
+    <div class="staff-modal">
+      <div class="staff-modal-head">
+        <h3 id="staffModalTitle">Add Staff Account</h3>
+        <button type="button" id="closeStaffModal" aria-label="Close">×</button>
+      </div>
+      <form id="staffForm">
+        <input type="hidden" id="staffId" />
+        <div class="form-grid">
+          <div class="form-field span-2">
+            <label for="staffName">Full Name</label>
+            <input id="staffName" type="text" placeholder="e.g. Juan Dela Cruz" required />
+          </div>
+          <div class="form-field">
+            <label for="staffEmail">Email</label>
+            <input id="staffEmail" type="email" placeholder="name@maslog.com" required />
+          </div>
+          <div class="form-field">
+            <label for="staffPhone">Mobile Number</label>
+            <input id="staffPhone" type="tel" placeholder="+63 9XX XXX XXXX" />
+          </div>
+          <div class="form-field">
+            <label for="staffRole">Role</label>
+            <select id="staffRole" required>
+              <option value="Staff">Staff</option>
+              <option value="Admin">Admin</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="staffStatus">Status</label>
+            <select id="staffStatus" required>
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="staffPassword">Password</label>
+            <input id="staffPassword" type="password" placeholder="Min. 6 characters" minlength="6" />
+          </div>
+          <div class="form-field">
+            <label for="staffConfirm">Confirm Password</label>
+            <input id="staffConfirm" type="password" placeholder="Re-enter password" />
+          </div>
+        </div>
+        <div class="staff-modal-actions">
+          <button type="button" class="btn btn-ghost" id="cancelStaff">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="saveStaff">Save Staff</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast-staff" id="staffToast" role="status"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="maslog-db.js"></script>
+
+  <script>
+    const AVATAR_COLORS = ["#27ae60", "#9b59b6", "#3498db", "#e67e22", "#1abc9c", "#2980b9", "#8e44ad", "#16a085"];
+
+    let staffList = [];
+    let editingId = null;
+
+    function initials(name) {
+      return (name || "?").split(/\s+/).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+    }
+
+    function roleTagClass(role) {
+      if (role === "Admin") return "admin";
+      return "cashier";
+    }
+
+    function formatDate(iso) {
+      if (!iso) return "—";
+      return new Date(iso + "T12:00:00").toLocaleDateString("en-PH", { month: "short", day: "numeric", year: "numeric" });
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById("staffToast");
+      t.textContent = msg;
+      t.classList.add("show");
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => t.classList.remove("show"), 2200);
+    }
+
+    function updateStats() {
+      document.getElementById("statTotal").textContent = staffList.length;
+      document.getElementById("statAdmins").textContent = staffList.filter((s) => s.role === "Admin").length;
+      document.getElementById("statCashiers").textContent = staffList.filter((s) => s.role === "Staff").length;
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById("staffBody");
+      if (!staffList.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#6b7280;padding:1.2rem;">No admin or staff accounts found in the database</td></tr>';
+        document.getElementById("pageInfo").textContent = "Showing 0 accounts";
+        updateStats();
+        return;
+      }
+
+      tbody.innerHTML = staffList.map((s, i) => {
+        const color = AVATAR_COLORS[i % AVATAR_COLORS.length];
+        const tag = roleTagClass(s.role);
+        const statusCls = s.status === "Active" ? "active" : "inactive";
+        return `
+          <tr data-role="${s.role}" data-id="${s.id}">
+            <td><input class="checkbox" type="checkbox" /></td>
+            <td><div class="person"><div class="av" style="background:${color}">${initials(s.name)}</div><div><strong>${escapeHtml(s.name)}</strong><small>${escapeHtml(s.role)}</small></div></div></td>
+            <td>${escapeHtml(s.email)}</td>
+            <td><span class="tag ${tag}">${escapeHtml(s.role)}</span></td>
+            <td>${formatDate(s.createdAt)}</td>
+            <td><span class="status-dot ${statusCls}">${escapeHtml(s.status)}</span></td>
+            <td><div class="actions">
+              <button class="edit" type="button" data-id="${s.id}" aria-label="Edit"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+              <button class="delete" type="button" data-id="${s.id}" aria-label="Delete"><svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>
+            </div></td>
+          </tr>`;
+      }).join("");
+
+      document.getElementById("pageInfo").textContent = `Showing ${staffList.length} account${staffList.length !== 1 ? "s" : ""}`;
+      bindRowActions();
+      filterRows();
+      updateStats();
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    function openModal(editItem) {
+      editingId = editItem?.id || null;
+      document.getElementById("staffModalTitle").textContent = editingId ? "Edit Staff Account" : "Add Staff Account";
+      document.getElementById("staffId").value = editingId || "";
+      document.getElementById("staffName").value = editItem?.name || "";
+      document.getElementById("staffEmail").value = editItem?.email || "";
+      document.getElementById("staffPhone").value = editItem?.phone || "";
+      document.getElementById("staffRole").value = editItem?.role || "Staff";
+      document.getElementById("staffStatus").value = editItem?.status || "Active";
+      document.getElementById("staffPassword").value = "";
+      document.getElementById("staffConfirm").value = "";
+      document.getElementById("staffPassword").required = !editingId;
+      document.getElementById("staffConfirm").required = !editingId;
+      document.getElementById("staffModal").classList.add("open");
+    }
+
+    function closeModal() {
+      document.getElementById("staffModal").classList.remove("open");
+      document.getElementById("staffForm").reset();
+      editingId = null;
+    }
+
+    function bindRowActions() {
+      document.querySelectorAll(".edit").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const item = staffList.find((s) => s.id === btn.dataset.id);
+          if (item) openModal(item);
+        });
+      });
+      document.querySelectorAll(".delete").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const item = staffList.find((s) => s.id === btn.dataset.id);
+          if (!item) return;
+          deleteStaff(item);
+        });
+      });
+    }
+
+    async function deleteStaff(item) {
+      if (!confirm(`Delete ${item.name}?`)) return;
+      try {
+        await MaslogDB.deleteStaffAccount(item.id);
+        showToast("Staff account deleted");
+        await reloadStaffList();
+      } catch (err) {
+        showToast(err.message || "Failed to delete staff account");
+      }
+    }
+
+    async function reloadStaffList() {
+      staffList = await MaslogDB.listStaffAccounts();
+      renderTable();
+    }
+
+    document.getElementById("btnAddStaff").addEventListener("click", () => openModal(null));
+    document.getElementById("closeStaffModal").addEventListener("click", closeModal);
+    document.getElementById("cancelStaff").addEventListener("click", closeModal);
+    document.getElementById("staffModal").addEventListener("click", (e) => {
+      if (e.target === e.currentTarget) closeModal();
+    });
+
+    document.getElementById("staffForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = document.getElementById("staffName").value.trim();
+      const email = document.getElementById("staffEmail").value.trim().toLowerCase();
+      const phone = document.getElementById("staffPhone").value.trim();
+      const role = document.getElementById("staffRole").value;
+      const status = document.getElementById("staffStatus").value;
+      const password = document.getElementById("staffPassword").value;
+      const confirm = document.getElementById("staffConfirm").value;
+
+      if (!name || !email) {
+        showToast("Name and email are required");
+        return;
+      }
+      if (!editingId && (!password || password.length < 6)) {
+        showToast("Password must be at least 6 characters");
+        return;
+      }
+      if (password && password !== confirm) {
+        showToast("Passwords do not match");
+        return;
+      }
+      if (staffList.some((s) => s.email === email && s.id !== editingId)) {
+        showToast("Email already exists");
+        return;
+      }
+
+      const saveBtn = document.getElementById("saveStaff");
+      saveBtn.disabled = true;
+      try {
+        await MaslogDB.saveStaffAccount({ name, email, phone, role, status, password }, editingId);
+        showToast(editingId ? "Staff account updated" : "Staff account added");
+        await reloadStaffList();
+        closeModal();
+      } catch (err) {
+        showToast(err.message || "Failed to save staff account");
+      } finally {
+        saveBtn.disabled = false;
+      }
+    });
+
+    const search = document.getElementById("staffSearch");
+    const role = document.getElementById("roleFilter");
+
+    function filterRows() {
+      const q = search.value.toLowerCase().trim();
+      const r = role.value;
+      document.querySelectorAll("#staffBody tr").forEach((row) => {
+        const matchText = row.textContent.toLowerCase().includes(q);
+        const matchRole = r === "all" || row.dataset.role === r;
+        row.style.display = matchText && matchRole ? "" : "none";
+      });
+    }
+
+    search.addEventListener("input", filterRows);
+    role.addEventListener("change", filterRows);
+
+    (async function init() {
+      try {
+        await reloadStaffList();
+      } catch (err) {
+        showToast(err.message || "Failed to load staff accounts");
+      }
+    })();
+  </script>
+</body>
+</html>

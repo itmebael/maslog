@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Maslog Cold Spring — Sign In</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --green-deep: #1b4332;
+      --green-mid: #40916c;
+      --green-bright: #76c893;
+      --green-lime: #b5e48c;
+      --green-glow: #d8f3dc;
+      --glass: rgba(12, 28, 18, 0.42);
+      --glass-border: rgba(255, 255, 255, 0.18);
+      --glass-soft: rgba(0, 0, 0, 0.28);
+      --text: #ffffff;
+      --text-muted: rgba(255, 255, 255, 0.72);
+      --serif: "Cormorant Garamond", Georgia, serif;
+      --sans: "Outfit", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      min-height: 100%;
+    }
+
+    body {
+      font-family: var(--sans);
+      color: var(--text);
+      background:
+        linear-gradient(105deg, rgba(8, 28, 16, 0.55) 0%, rgba(8, 28, 16, 0.25) 45%, rgba(8, 28, 16, 0.45) 100%),
+        url("backg.png") center / cover no-repeat fixed;
+      overflow-x: hidden;
+    }
+
+    .page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 2rem;
+      padding: 3rem calc(5vw + 1in);
+      animation: fadeIn 0.9s ease both;
+    }
+
+    /* ——— Left branding ——— */
+    .brand {
+      flex: 1;
+      max-width: 520px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      animation: slideLeft 0.85s ease both;
+    }
+
+    .logo-mark {
+      width: 52px;
+      height: 52px;
+      border: 1.5px solid rgba(255, 255, 255, 0.85);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(8px);
+    }
+
+    .logo-mark svg {
+      width: 26px;
+      height: 26px;
+      fill: var(--green-bright);
+    }
+
+    .brand-title {
+      font-family: var(--serif);
+      line-height: 0.95;
+    }
+
+    .brand-title .name {
+      display: block;
+      font-size: clamp(2.8rem, 5vw, 4.2rem);
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    .brand-title .accent {
+      display: block;
+      font-size: clamp(2.8rem, 5vw, 4.2rem);
+      font-weight: 700;
+      color: var(--green-lime);
+      letter-spacing: 0.01em;
+    }
+
+    .portal-label {
+      margin-top: 0.65rem;
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.88);
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      max-width: 280px;
+      margin: 0.25rem 0;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+    }
+
+    .divider svg {
+      width: 16px;
+      height: 16px;
+      fill: var(--green-lime);
+      flex-shrink: 0;
+    }
+
+    .brand-copy {
+      font-size: 1rem;
+      font-weight: 300;
+      line-height: 1.65;
+      color: var(--text-muted);
+      max-width: 380px;
+    }
+
+    .features {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1.25rem;
+      padding: 0.85rem;
+      background: var(--glass-soft);
+      border: 1px solid var(--glass-border);
+      border-radius: 14px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      animation: riseUp 1s 0.25s ease both;
+    }
+
+    .feature {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      padding: 0.55rem 0.65rem;
+    }
+
+    .feature-head {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+
+    .feature-head svg {
+      width: 16px;
+      height: 16px;
+      stroke: var(--green-lime);
+      fill: none;
+      stroke-width: 1.8;
+      flex-shrink: 0;
+    }
+
+    .feature h3 {
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+
+    .feature p {
+      font-size: 0.72rem;
+      font-weight: 300;
+      line-height: 1.4;
+      color: rgba(255, 255, 255, 0.65);
+    }
+
+    /* ——— Login card ——— */
+    .login-wrap {
+      flex: 0 1 420px;
+      animation: slideRight 0.85s ease both;
+    }
+
+    .login-card {
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      padding: 2.4rem 2.1rem 1.6rem;
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.15rem;
+    }
+
+    .avatar {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: 2px solid rgba(181, 228, 140, 0.55);
+      background:
+        radial-gradient(circle at 50% 70%, #76c893 0%, #40916c 40%, #1b4332 100%);
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.08);
+      animation: softPulse 3.5s ease-in-out infinite;
+    }
+
+    .avatar svg {
+      width: 44px;
+      height: 44px;
+    }
+
+    .login-card h1 {
+      font-family: var(--serif);
+      font-size: 2.15rem;
+      font-weight: 600;
+      text-align: center;
+      margin-top: -0.15rem;
+    }
+
+    .login-card .subtitle {
+      font-size: 0.88rem;
+      font-weight: 300;
+      color: var(--text-muted);
+      margin-top: -0.85rem;
+      text-align: center;
+    }
+
+    form {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 0.9rem;
+    }
+
+    .field {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: rgba(0, 0, 0, 0.32);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      padding: 0.85rem 1rem;
+      transition: border-color 0.25s ease, background 0.25s ease;
+    }
+
+    .field:focus-within {
+      border-color: rgba(118, 200, 147, 0.65);
+      background: rgba(0, 0, 0, 0.42);
+    }
+
+    .field svg {
+      width: 18px;
+      height: 18px;
+      stroke: rgba(255, 255, 255, 0.55);
+      fill: none;
+      stroke-width: 1.7;
+      flex-shrink: 0;
+    }
+
+    .field-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+      min-width: 0;
+    }
+
+    .field-body label {
+      font-size: 0.68rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      color: rgba(255, 255, 255, 0.55);
+    }
+
+    .field-body input {
+      width: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 0.95rem;
+      font-weight: 400;
+    }
+
+    .field-body input::placeholder {
+      color: rgba(255, 255, 255, 0.35);
+    }
+
+    .options {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: -0.15rem;
+    }
+
+    .role-pick {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.25rem;
+      padding: 0.25rem;
+      margin-bottom: 0.25rem;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 12px;
+      background: rgba(0, 0, 0, 0.24);
+    }
+
+    .role-pick label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 38px;
+      padding: 0.55rem 0.45rem;
+      border-radius: 9px;
+      border: 1px solid transparent;
+      background: transparent;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.75);
+      cursor: pointer;
+      transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .role-pick input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .role-pick label:has(input:checked) {
+      background: linear-gradient(135deg, rgba(64, 145, 108, 0.85), rgba(116, 198, 157, 0.45));
+      border-color: rgba(181, 228, 140, 0.55);
+      color: #fff;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.22);
+    }
+
+    .remember {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.82rem;
+      color: rgba(255, 255, 255, 0.82);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .remember input {
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border: 1.5px solid rgba(255, 255, 255, 0.4);
+      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.25);
+      cursor: pointer;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .remember input:checked {
+      background: var(--green-mid);
+      border-color: var(--green-bright);
+    }
+
+    .remember input:checked::after {
+      content: "";
+      position: absolute;
+      left: 4px;
+      top: 1px;
+      width: 4px;
+      height: 8px;
+      border: solid white;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+
+    .forgot {
+      font-size: 0.82rem;
+      color: var(--green-lime);
+      text-decoration: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .forgot:hover {
+      opacity: 0.8;
+      text-decoration: underline;
+    }
+
+    .btn-signin {
+      width: 100%;
+      margin-top: 0.25rem;
+      border: none;
+      border-radius: 999px;
+      padding: 0.95rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.55rem;
+      font-family: var(--sans);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--green-deep);
+      background: linear-gradient(90deg, var(--green-bright), var(--green-lime));
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(118, 200, 147, 0.35);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    }
+
+    .btn-signin:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.05);
+      box-shadow: 0 12px 28px rgba(118, 200, 147, 0.45);
+    }
+
+    .btn-signin:active {
+      transform: translateY(0);
+    }
+
+    .btn-signin svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    .or-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      width: 100%;
+      margin-top: 0.15rem;
+    }
+
+    .or-row::before,
+    .or-row::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .or-row span {
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .signup-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      width: 100%;
+      flex-wrap: wrap;
+    }
+
+    .signup-row p {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .btn-create {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.55rem 1rem;
+      border: 1.5px solid var(--green-bright);
+      border-radius: 999px;
+      background: transparent;
+      color: var(--green-lime);
+      font-family: var(--sans);
+      font-size: 0.82rem;
+      font-weight: 500;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .btn-create:hover {
+      background: rgba(118, 200, 147, 0.15);
+    }
+
+    .btn-create svg {
+      width: 15px;
+      height: 15px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+    }
+
+    .card-footer {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-top: 0.35rem;
+      font-size: 0.72rem;
+      font-weight: 300;
+      color: rgba(255, 255, 255, 0.55);
+    }
+
+    .card-footer svg {
+      width: 14px;
+      height: 14px;
+      fill: var(--green-bright);
+    }
+
+    /* ——— Motion ——— */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideLeft {
+      from { opacity: 0; transform: translateX(-28px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes slideRight {
+      from { opacity: 0; transform: translateX(28px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes riseUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes softPulse {
+      0%, 100% { box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.08); }
+      50% { box-shadow: 0 0 0 7px rgba(181, 228, 140, 0.18); }
+    }
+
+    /* ——— Responsive ——— */
+    @media (max-width: 900px) {
+      .page {
+        flex-direction: column;
+        padding: 2rem 1.25rem 2.5rem;
+        justify-content: flex-start;
+      }
+
+      .brand {
+        max-width: 100%;
+        align-items: center;
+        text-align: center;
+      }
+
+      .divider {
+        margin-inline: auto;
+      }
+
+      .brand-copy {
+        max-width: 420px;
+      }
+
+      .features {
+        width: 100%;
+        max-width: 520px;
+      }
+
+      .login-wrap {
+        width: 100%;
+        max-width: 420px;
+        flex: none;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .features {
+        flex-direction: column;
+        gap: 0.35rem;
+      }
+
+      .signup-row {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+      }
+
+      .btn-create {
+        justify-content: center;
+      }
+
+      .login-card {
+        padding: 2rem 1.35rem 1.4rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="brand" aria-label="Maslog Cold Spring branding">
+      <div class="logo-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M17 8C8 10 5.9 16.17 3.82 21.67L5.71 22l1-2.3A24.09 24.09 0 0 0 12 17c5-3 7-8 7-11a3 3 0 0 0-2-2.82M9.09 17c2.46-2.71 4.91-4.94 8.54-6.68C16.91 14.87 13.54 16.62 9.09 17m8.4-11.57A1 1 0 0 1 19 6c0 1.91-1.02 5.07-3.16 7.72C12.91 10.35 10.18 8.29 6.39 7.41c1.56-.57 3.28-.91 5.11-.91 2.2 0 4.34.46 6-.1Z"/>
+        </svg>
+      </div>
+
+      <div class="brand-title">
+        <span class="name">Maslog</span>
+        <span class="accent">Cold Spring</span>
+        <p class="portal-label">Client Portal</p>
+      </div>
+
+      <div class="divider" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M17 8C8 10 5.9 16.17 3.82 21.67L5.71 22l1-2.3A24.09 24.09 0 0 0 12 17c5-3 7-8 7-11a3 3 0 0 0-2-2.82Z"/></svg>
+      </div>
+
+      <p class="brand-copy">
+        Book visits, view receipts, and manage your Maslog Cold Spring account in one secure portal.
+      </p>
+
+      <div class="features">
+        <div class="feature">
+          <div class="feature-head">
+            <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+            <h3>Secure</h3>
+          </div>
+          <p>Your data is always protected.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-head">
+            <svg viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+            <h3>Natural</h3>
+          </div>
+          <p>Inspired by nature.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-head">
+            <svg viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            <h3>Efficient</h3>
+          </div>
+          <p>Keep your bookings in one place.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="login-wrap" aria-label="Sign in">
+      <div class="login-card">
+        <h1>Welcome Back!</h1>
+        <p class="subtitle">Please sign in to continue</p>
+
+        <form action="#" method="post" autocomplete="on">
+          <div class="role-pick" role="tablist" aria-label="Sign in as">
+            <label role="tab" aria-selected="true">
+              <input type="radio" name="portal" value="client" checked />
+              Client
+            </label>
+            <label role="tab" aria-selected="false">
+              <input type="radio" name="portal" value="staff" />
+              Staff
+            </label>
+            <label role="tab" aria-selected="false">
+              <input type="radio" name="portal" value="admin" />
+              Admin
+            </label>
+          </div>
+
+          <div class="field">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+            <div class="field-body">
+              <label for="email">Email or Username</label>
+              <input
+                id="email"
+                name="email"
+                type="text"
+                placeholder="example@maslog.com"
+                autocomplete="username"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="field">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3" y="11" width="18" height="11" rx="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <div class="field-body">
+              <label for="password">Password</label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="••••••••"
+                autocomplete="current-password"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="options">
+            <label class="remember">
+              <input type="checkbox" name="remember" checked />
+              Remember me
+            </label>
+            <a class="forgot" href="#">Forgot password?</a>
+          </div>
+
+          <button type="submit" class="btn-signin">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+              <polyline points="10 17 15 12 10 7"/>
+              <line x1="15" y1="12" x2="3" y2="12"/>
+            </svg>
+            Sign In
+          </button>
+        </form>
+
+        <div class="or-row"><span>OR</span></div>
+
+        <div class="signup-row">
+          <p>Don't have an account?</p>
+          <a class="btn-create" href="create-account.html">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <line x1="19" y1="8" x2="19" y2="14"/>
+              <line x1="22" y1="11" x2="16" y2="11"/>
+            </svg>
+            Create Account
+          </a>
+        </div>
+
+        <p class="card-footer">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M17 8C8 10 5.9 16.17 3.82 21.67L5.71 22l1-2.3A24.09 24.09 0 0 0 12 17c5-3 7-8 7-11a3 3 0 0 0-2-2.82Z"/>
+          </svg>
+          Preserve Nature. Manage Better.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="maslog-db.js"></script>
+  <script>
+    const roleTabs = document.querySelectorAll(".role-pick label");
+
+    roleTabs.forEach((tab) => {
+      const input = tab.querySelector('input[name="portal"]');
+      input.addEventListener("change", () => {
+        roleTabs.forEach((item) => {
+          const checked = item.querySelector('input[name="portal"]').checked;
+          item.setAttribute("aria-selected", checked ? "true" : "false");
+        });
+      });
+    });
+
+    document.querySelector("form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const portal = document.querySelector('input[name="portal"]:checked')?.value || "client";
+      const email = document.getElementById("email").value.trim();
+      const pass = document.getElementById("password").value;
+      const btn = e.target.querySelector('button[type="submit"]');
+      const prev = btn?.textContent;
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = "Signing in...";
+      }
+      try {
+        await MaslogDB.login(email, pass, portal);
+        localStorage.setItem("portal", portal);
+        if (portal === "admin") location.href = "admin-dashboard.html";
+        else if (portal === "staff") location.href = "staff-dashboard.html";
+        else location.href = "user-dashboard.html";
+      } catch (err) {
+        alert(err.message || "Login failed");
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = prev || "Sign In";
+        }
+      }
+    });
+  </script>
+</body>
+</html>

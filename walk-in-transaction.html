@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Walk-In Transaction — Maslog Cold Spring</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="admin.css?v=6" />
+  <link rel="stylesheet" href="admin-extra.css?v=5" />
+  <style>
+    .walk-layout {
+      display: grid;
+      grid-template-columns: 1fr minmax(300px, 340px);
+      gap: 1.25rem;
+      align-items: start;
+    }
+
+    .catalog { display: flex; flex-direction: column; gap: 1.15rem; }
+
+    .catalog h3 {
+      font-size: 1rem;
+      font-weight: 650;
+      margin-bottom: 0.75rem;
+    }
+
+    .fee-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.85rem;
+    }
+
+    .fee-card, .cottage-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+    }
+
+    .cottage-card.is-selected {
+      border-color: #e74c3c;
+      background: #fff1f0;
+      box-shadow: 0 8px 20px rgba(231, 76, 60, 0.18);
+    }
+
+    .cottage-card.is-selected .status,
+    .cottage-card.is-selected .price {
+      color: #c0392b !important;
+    }
+
+    .cottage-card.is-selected .btn {
+      background: #e74c3c;
+      border-color: #e74c3c;
+      color: #fff;
+    }
+
+    .fee-card .icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 0.55rem;
+      background: #e8f8ef;
+      color: var(--green-dark);
+    }
+
+    .fee-card .icon svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+    }
+
+    .fee-card strong { display: block; font-size: 0.95rem; }
+    .fee-card .price {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--green-dark);
+      margin: 0.35rem 0;
+    }
+    .fee-card .desc {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .qty {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+    }
+
+    .qty button {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      border: 1px solid #dde3ea;
+      background: #fff;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .qty span {
+      min-width: 1.5rem;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .cottage-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.85rem;
+    }
+
+    .cottage-card {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      position: relative;
+    }
+
+    .cottage-card .status {
+      position: absolute;
+      top: 0.85rem;
+      right: 0.85rem;
+      font-size: 0.7rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .cottage-card .status::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .status.available { color: var(--green-dark); }
+    .status.occupied { color: #c0392b; }
+    .status.reserved { color: #d68910; }
+
+    .cottage-card strong { font-size: 0.95rem; padding-right: 4.5rem; }
+    .cottage-card .meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+    .cottage-card .price {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-top: 0.25rem;
+    }
+
+    .cottage-card .btn {
+      margin-top: 0.5rem;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .cottage-card.is-busy { opacity: 0.72; }
+
+    .partnership-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.85rem;
+    }
+
+    .order-panel {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+      padding: 1.25rem 1.2rem 1.3rem;
+      position: sticky;
+      top: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.15rem;
+      min-height: 0;
+    }
+
+    .order-head {
+      padding-bottom: 0.15rem;
+    }
+
+    .order-panel h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      line-height: 1.25;
+      margin: 0 0 0.3rem;
+    }
+
+    .order-panel .trx {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin: 0;
+      letter-spacing: 0.02em;
+    }
+
+    .cart-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      min-height: 120px;
+      max-height: 240px;
+      overflow-y: auto;
+      padding-right: 0.15rem;
+    }
+
+    .cart-list:empty::before {
+      content: "No items yet. Add entrance or property fees.";
+      display: block;
+      padding: 1.1rem 0.85rem;
+      text-align: center;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      background: #f7f9fa;
+      border-radius: 10px;
+      border: 1px dashed #dde3ea;
+      line-height: 1.4;
+    }
+
+    .cart-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.65rem;
+      padding: 0.7rem 0.75rem;
+      background: #f7f9fa;
+      border-radius: 10px;
+      font-size: 0.85rem;
+    }
+
+    .cart-item strong {
+      display: block;
+      font-size: 0.86rem;
+      font-weight: 650;
+      line-height: 1.3;
+      margin-bottom: 0.15rem;
+    }
+
+    .cart-item small {
+      color: var(--text-muted);
+      font-size: 0.78rem;
+    }
+
+    .cart-item .remove {
+      border: none;
+      background: #fdecea;
+      color: #c0392b;
+      cursor: pointer;
+      font-size: 1.05rem;
+      line-height: 1;
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      flex-shrink: 0;
+      display: grid;
+      place-items: center;
+      padding: 0;
+    }
+
+    .cart-item .remove:hover {
+      background: #f5c6c2;
+    }
+
+    .totals {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      font-size: 0.86rem;
+      border-top: 1px solid var(--border);
+      padding-top: 0.95rem;
+      margin-top: 0.1rem;
+    }
+
+    .totals div {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .totals div span:last-child {
+      color: var(--text);
+      font-weight: 550;
+    }
+
+    .totals .grand {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-top: 0.2rem;
+      padding-top: 0.65rem;
+      border-top: 1px dashed var(--border);
+      color: var(--text);
+    }
+
+    .totals .grand span {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .pay-methods {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.55rem;
+      margin-top: 0.1rem;
+    }
+
+    .pay-methods button {
+      border: 1.5px solid #dde3ea;
+      background: #fff;
+      border-radius: 10px;
+      padding: 0.7rem 0.65rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--text);
+      font-family: inherit;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+
+    .pay-methods button.active {
+      border-color: var(--green-dark);
+      background: #e8f8ef;
+      color: var(--green-dark);
+    }
+
+    .btn-receipt {
+      width: 100%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      padding: 0.85rem 1rem;
+      background: var(--sidebar-bg);
+      color: #fff;
+      margin-top: 0.15rem;
+      border-radius: 10px;
+      font-weight: 600;
+    }
+
+    .btn-receipt:hover {
+      filter: brightness(1.08);
+    }
+
+    .side-receipt {
+      margin-top: 1rem;
+      border: 1px solid #dbe5df;
+      border-top: 5px solid var(--sidebar-bg);
+      border-radius: 10px;
+      background: #fff;
+      padding: 0.9rem;
+    }
+
+    .side-receipt[hidden] { display: none !important; }
+
+    .side-receipt-head {
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 0.65rem;
+      align-items: center;
+      padding-bottom: 0.65rem;
+      border-bottom: 1px solid #dbe5df;
+      text-align: center;
+    }
+
+    .side-receipt-head img {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      object-fit: contain;
+      border: 1px solid #dbe5df;
+      background: #fff;
+    }
+
+    .side-receipt-head small {
+      display: block;
+      color: #6b7280;
+      font-size: 0.62rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .side-receipt-head strong {
+      display: block;
+      color: var(--sidebar-bg);
+      font-size: 0.88rem;
+      text-transform: uppercase;
+      line-height: 1.2;
+    }
+
+    .side-receipt-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.6rem;
+      align-items: center;
+      margin: 0.75rem 0;
+      padding: 0.55rem 0.65rem;
+      background: #f7faf8;
+      border: 1px solid #e1e8e4;
+    }
+
+    .side-receipt-title h4 {
+      margin: 0;
+      color: var(--sidebar-bg);
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .side-receipt-title span {
+      color: #b42318;
+      font-size: 0.68rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .receipt-lines {
+      display: grid;
+      gap: 0.4rem;
+      font-size: 0.78rem;
+    }
+
+    .receipt-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.65rem;
+      padding-bottom: 0.38rem;
+      border-bottom: 1px dashed #e4ebe7;
+    }
+
+    .receipt-line span { color: #6b7280; }
+    .receipt-line strong { color: var(--text); text-align: right; }
+
+    .receipt-items {
+      margin-top: 0.7rem;
+      padding: 0.65rem;
+      border: 1px solid #edf1ef;
+      background: #fbfdfc;
+      display: grid;
+      gap: 0.42rem;
+    }
+
+    .receipt-item-row,
+    .receipt-total-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.7rem;
+      font-size: 0.78rem;
+    }
+
+    .receipt-item-row strong,
+    .receipt-total-row strong {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .receipt-total-row.grand {
+      margin-top: 0.35rem;
+      padding-top: 0.45rem;
+      border-top: 1px solid #dbe5df;
+      font-size: 0.88rem;
+      font-weight: 800;
+      color: var(--sidebar-bg);
+    }
+
+    .side-receipt-qr {
+      display: grid;
+      grid-template-columns: 92px 1fr;
+      gap: 0.65rem;
+      align-items: center;
+      margin-top: 0.75rem;
+      padding: 0.55rem;
+      border: 1px dashed #b9c9c0;
+      background: #fbfdfc;
+    }
+
+    .side-receipt-qr img {
+      width: 82px;
+      height: 82px;
+      background: #fff;
+      border: 1px solid #e1e8e4;
+      padding: 0.25rem;
+    }
+
+    .side-receipt-qr p {
+      margin: 0;
+      font-size: 0.7rem;
+      color: #6b7280;
+      line-height: 1.35;
+    }
+
+    .side-receipt-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+
+    .side-receipt-actions .btn {
+      flex: 1;
+      justify-content: center;
+      padding: 0.55rem;
+      font-size: 0.78rem;
+    }
+
+    @media (max-width: 1100px) {
+      .walk-layout { grid-template-columns: 1fr; }
+      .order-panel { position: static; }
+      .fee-grid, .cottage-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 600px) {
+      .fee-grid, .cottage-grid { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      body { background: #fff; }
+      .sidebar,
+      .hero,
+      .catalog,
+      .order-head,
+      .cart-list,
+      .totals,
+      .pay-methods,
+      #receiptBtn,
+      .side-receipt-actions {
+        display: none !important;
+      }
+      .shell,
+      .main,
+      .content,
+      .walk-layout,
+      .order-panel {
+        display: block !important;
+        width: auto !important;
+        min-height: auto !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        background: #fff !important;
+        box-shadow: none !important;
+      }
+      .side-receipt {
+        max-width: 420px;
+        margin: 0 auto;
+        box-shadow: none;
+      }
+    }
+  </style>
+  <script src="portal-nav.js" defer></script>
+  <script src="admin-logout.js" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M17 8C8 10 5.9 16.17 3.82 21.67L5.71 22l1-2.3A24.09 24.09 0 0 0 12 17c5-3 7-8 7-11a3 3 0 0 0-2-2.82M9.09 17c2.46-2.71 4.91-4.94 8.54-6.68C16.91 14.87 13.54 16.62 9.09 17m8.4-11.57A1 1 0 0 1 19 6c0 1.91-1.02 5.07-3.16 7.72C12.91 10.35 10.18 8.29 6.39 7.41c1.56-.57 3.28-.91 5.11-.91 2.2 0 4.34.46 6-.1Z"/></svg>
+        </div>
+        <div>
+          <h1>Maslog Cold Spring</h1>
+          <p>Admin Portal</p>
+        </div>
+      </div>
+      <p class="menu-label">Main Menu</p>
+      <nav class="nav">
+        <a href="admin-dashboard.html"><svg viewBox="0 0 24 24"><path d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M12 2v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="M2 12h2"/><path d="m4.93 19.07 1.41-1.41"/><path d="M19.07 4.93l-1.41 1.41"/><path d="M20 12h2"/><path d="M12 20v2"/><path d="m16 16 3 3"/><path d="M12 13v5"/></svg>Dashboard</a>
+        <a href="staff-account.html"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Staff Account</a>
+        <a href="user-management.html"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>User Management</a>
+        <a href="sales-monitoring.html"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>Sales Monitoring</a>
+        <a href="revenue-report.html"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>Revenue Report</a>
+        <a href="online-booking.html"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>Online Booking</a>
+        <a class="active" href="walk-in-transaction.html"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>Walk-In Transaction</a>
+        <a href="transaction-history.html"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Transaction History</a>
+        <a href="system-configuration.html"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v2"/><path d="M12 21v2"/><path d="m4.22 4.22 1.42 1.42"/><path d="m18.36 18.36 1.42 1.42"/><path d="M1 12h2"/><path d="M21 12h2"/><path d="m4.22 19.78 1.42-1.42"/><path d="m18.36 5.64 1.42-1.42"/></svg>System Configuration</a>
+        </nav>
+      <a class="btn-logout" href="index.html"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Log-Out</a>
+    </aside>
+
+    <main class="main">
+      <header class="hero">
+        <div class="page-title">
+          <h2>Walk-In Transaction</h2>
+          <p id="liveStamp">Tuesday, June 10, 2025 • 10:42 AM</p>
+        </div>
+        <div class="top-actions">
+          <form class="search-group" onsubmit="return false;">
+            <div class="field">
+              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input type="search" placeholder="Search customer name or ID" />
+            </div>
+            <button class="btn-search" type="submit">SEARCH</button>
+          </form>
+          <div class="profile">
+            <div class="avatar-fallback">NF</div>
+            <div><strong>Neneth Fabilla</strong><span>Staff</span></div>
+          </div>
+        </div>
+      </header>
+
+      <div class="content">
+        <div class="walk-layout">
+          <div class="catalog">
+            <section class="card">
+              <h3>Entrance Fees</h3>
+              <p style="font-size:0.78rem;color:var(--text-muted);margin:-0.35rem 0 0.75rem;">Rates from Admin System Configuration</p>
+              <div class="fee-grid" id="feeGrid"></div>
+            </section>
+
+            <section class="card">
+              <h3>Property Rentals</h3>
+              <p style="font-size:0.78rem;color:var(--text-muted);margin:-0.35rem 0 0.75rem;">Rates from Admin System Configuration</p>
+              <div class="cottage-grid" id="cottageGrid"></div>
+            </section>
+
+            <section class="card">
+              <h3>Partnership</h3>
+              <p style="font-size:0.78rem;color:var(--text-muted);margin:-0.35rem 0 0.75rem;">Rates from Staff Online Booking Setup</p>
+              <div class="partnership-grid" id="partnershipGrid"></div>
+            </section>
+          </div>
+
+          <aside class="order-panel">
+            <div class="order-head">
+              <h3>Order Summary</h3>
+              <p class="trx" id="orderTrx">No receipt generated</p>
+            </div>
+            <div class="cart-list" id="cartList"></div>
+            <div class="totals">
+              <div><span>Subtotal</span><span id="subtotal">₱0.00</span></div>
+              <div><span>Tax (12% VAT)</span><span id="tax">₱0.00</span></div>
+              <div><span>Discount</span><span id="discount">₱0.00</span></div>
+              <div class="grand"><span>Total</span><span id="total">₱0.00</span></div>
+            </div>
+            <div class="pay-methods">
+              <button type="button" class="active" data-pay="cash">Cash</button>
+              <button type="button" data-pay="gcash">GCash</button>
+            </div>
+            <button type="button" class="btn btn-receipt" id="receiptBtn">
+              <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+              Generate Supplementary Receipt
+            </button>
+            <section class="side-receipt" id="sideReceipt" hidden aria-label="Supplementary receipt preview">
+              <div class="side-receipt-head">
+                <img src="logo.png" alt="Maslog logo" />
+                <div>
+                  <small>Republic of the Philippines</small>
+                  <strong>Barangay Maslog</strong>
+                  <small>Maslog Cold Spring Resort</small>
+                </div>
+              </div>
+              <div class="side-receipt-title">
+                <h4>Supplementary Receipt</h4>
+                <span>Verified Copy</span>
+              </div>
+              <div class="receipt-lines">
+                <div class="receipt-line"><span>Receipt No.</span><strong id="srNo">-</strong></div>
+                <div class="receipt-line"><span>Date / Time</span><strong id="srWhen">-</strong></div>
+                <div class="receipt-line"><span>Payment Method</span><strong id="srMethod">-</strong></div>
+                <div class="receipt-line"><span>Items / Guests</span><strong id="srGuests">-</strong></div>
+                <div class="receipt-line"><span>Approved By</span><strong id="srApprovedBy">-</strong></div>
+              </div>
+              <div class="receipt-items" id="srItems"></div>
+              <div class="side-receipt-qr">
+                <img id="srQr" alt="Supplementary receipt QR" />
+                <p>Scan this QR to verify receipt number, cart items, payment method, total amount, and approval details.</p>
+              </div>
+              <div class="side-receipt-actions">
+                <button type="button" class="btn btn-ghost" id="srPrintBtn">Print</button>
+                <button type="button" class="btn btn-primary" id="srNewBtn">New</button>
+              </div>
+            </section>
+          </aside>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="maslog-db.js"></script>
+  <script>
+    const ADMIN_FEES_KEY = "maslog_admin_fees_v1";
+    const STAFF_FEES_KEY = "maslog_staff_fees_v1";
+    const defaultFees = {
+      entrance: { adult: 150, child: 100, senior: 75, infant: 0 },
+      cottages: [],
+      partnership: {
+        name: "Vendor Stall Partnership",
+        perHour: 150,
+        perDay: 1200,
+        description: "Open stall space near the spring entrance. Includes 1 table and access to power outlet.",
+        available: true,
+      },
+    };
+
+    function loadAdminFees() {
+      try {
+        const raw = localStorage.getItem(ADMIN_FEES_KEY);
+        if (!raw) return structuredClone(defaultFees);
+        const parsed = JSON.parse(raw);
+        return {
+          entrance: { ...defaultFees.entrance, ...(parsed.entrance || {}) },
+          cottages: Array.isArray(parsed.cottages) ? parsed.cottages : structuredClone(defaultFees.cottages),
+        };
+      } catch {
+        return structuredClone(defaultFees);
+      }
+    }
+
+    function loadLocalPartnership() {
+      try {
+        const raw = localStorage.getItem(STAFF_FEES_KEY);
+        if (!raw) return { ...defaultFees.partnership };
+        const parsed = JSON.parse(raw);
+        return { ...defaultFees.partnership, ...(parsed.partnership || {}) };
+      } catch {
+        return { ...defaultFees.partnership };
+      }
+    }
+
+    const adminFees = loadAdminFees();
+    let propertyRentals = adminFees.cottages;
+    let partnership = loadLocalPartnership();
+    let partnerships = [partnership];
+    const money = (n) => "₱" + Number(n || 0).toLocaleString("en-PH");
+
+    function renderCatalog() {
+      const e = adminFees.entrance;
+      const feeItems = [
+        { name: "Adult Entrance", price: e.adult, desc: "Ages 13 and above", color: "" },
+        { name: "Child Entrance", price: e.child, desc: "Ages 4–12", color: "background:#eaf4fc;color:#3498db;" },
+        { name: "Senior / PWD", price: e.senior, desc: "Discounted rate", color: "background:#fef3e8;color:#e67e22;" },
+        { name: "Infant (0–3)", price: e.infant, desc: "Free or reduced", color: "background:#f4eaf8;color:#9b59b6;" },
+      ];
+      document.getElementById("feeGrid").innerHTML = feeItems
+        .map(
+          (f) => `
+        <article class="fee-card" data-name="${f.name}" data-price="${f.price}">
+          <div class="icon" style="${f.color}"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
+          <strong>${f.name}</strong>
+          <p class="price">${money(f.price)}</p>
+          <p class="desc">${f.desc}</p>
+          <div class="qty">
+            <button type="button" class="minus" aria-label="Decrease">−</button>
+            <span>0</span>
+            <button type="button" class="plus" aria-label="Increase">+</button>
+          </div>
+        </article>`
+        )
+        .join("");
+
+      document.getElementById("cottageGrid").innerHTML = propertyRentals
+        .map((c) => {
+          const busy = c.available === false;
+          return `
+          <article class="cottage-card${busy ? " is-busy" : ""}" data-name="${c.name}" data-price="${c.rate}">
+            <span class="status ${busy ? "occupied" : "available"}">${busy ? "Busy" : "Available"}</span>
+            <strong>${c.name}</strong>
+            <p class="meta">${c.features || "No description"}</p>
+            <p class="price">${money(c.rate)}</p>
+            ${
+              busy
+                ? '<button type="button" class="btn btn-ghost" disabled>Unavailable</button>'
+                : '<button type="button" class="btn btn-primary add-cottage">+ Add</button>'
+            }
+          </article>`;
+        })
+        .join("");
+
+      if (!propertyRentals.length) {
+        document.getElementById("cottageGrid").innerHTML =
+          '<p style="font-size:0.85rem;color:var(--text-muted);padding:0.4rem 0;">No rental properties found. Add cottage, chair, or tent in Staff Fees Edit.</p>';
+      }
+
+      renderPartnership();
+      bindCatalogEvents();
+    }
+
+    function renderPartnership() {
+      const rows = partnerships && partnerships.length ? partnerships : [partnership || defaultFees.partnership];
+      const items = rows
+        .flatMap((p) => {
+          const disabled = p.available === false;
+          return [
+            { name: `${p.name} - Hourly`, price: p.perHour, desc: p.description || "Partnership hourly rate", disabled },
+            { name: `${p.name} - Daily`, price: p.perDay, desc: p.description || "Partnership daily rate", disabled },
+          ];
+        })
+        .filter((item) => Number(item.price) > 0);
+
+      document.getElementById("partnershipGrid").innerHTML = items.length
+        ? items.map((item) => `
+            <article class="cottage-card${item.disabled ? " is-busy" : ""}" data-name="${item.name}" data-price="${item.price}">
+              <span class="status ${item.disabled ? "occupied" : "available"}">${item.disabled ? "Unavailable" : "Available"}</span>
+              <strong>${item.name}</strong>
+              <p class="meta">${item.desc}</p>
+              <p class="price">${money(item.price)}</p>
+              ${
+                item.disabled
+                  ? '<button type="button" class="btn btn-ghost" disabled>Unavailable</button>'
+                  : '<button type="button" class="btn btn-primary add-partnership">+ Add</button>'
+              }
+            </article>
+          `).join("")
+        : '<p style="font-size:0.85rem;color:var(--text-muted);padding:0.4rem 0;">No partnership rate configured.</p>';
+    }
+
+    const cart = [];
+    const cartList = document.getElementById("cartList");
+    let currentReceiptData = null;
+    let currentReceiptSaved = false;
+    const fmt = (n) => "₱" + n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    function renderCart() {
+      cartList.innerHTML = cart.length
+        ? cart.map((item, i) => `
+            <div class="cart-item">
+              <div>
+                <strong>${item.name}${item.qty > 1 ? " × " + item.qty : ""}</strong>
+                <small>${fmt(item.price * item.qty)}</small>
+              </div>
+              <button type="button" class="remove" data-i="${i}" aria-label="Remove">×</button>
+            </div>`).join("")
+        : `<p style="font-size:0.85rem;color:var(--text-muted);text-align:center;padding:1rem 0;">No items yet</p>`;
+
+      const sub = cart.reduce((s, i) => s + i.price * i.qty, 0);
+      const tax = sub * 0.12;
+      const total = sub + tax;
+      document.getElementById("subtotal").textContent = fmt(sub);
+      document.getElementById("tax").textContent = fmt(tax);
+      document.getElementById("discount").textContent = fmt(0);
+      document.getElementById("total").textContent = fmt(total);
+      updateSelectedCards();
+    }
+
+    function updateSelectedCards() {
+      document.querySelectorAll(".cottage-card").forEach((card) => {
+        const name = card.dataset.name + (card.querySelector(".add-cottage") ? " Rental" : "");
+        const selected = cart.some((item) => item.name === name);
+        card.classList.toggle("is-selected", selected);
+        const btn = card.querySelector(".add-cottage, .add-partnership");
+        if (btn && !btn.disabled) {
+          btn.textContent = selected ? "Added" : "+ Add";
+        }
+      });
+    }
+
+    cartList.addEventListener("click", (e) => {
+      const btn = e.target.closest(".remove");
+      if (!btn) return;
+      cart.splice(+btn.dataset.i, 1);
+      renderCart();
+    });
+
+    function upsertFee(name, price, qty) {
+      const idx = cart.findIndex((i) => i.name === name && i.type === "fee");
+      if (qty <= 0) {
+        if (idx >= 0) cart.splice(idx, 1);
+      } else if (idx >= 0) {
+        cart[idx].qty = qty;
+      } else {
+        cart.push({ name, price, qty, type: "fee" });
+      }
+      renderCart();
+    }
+
+    function bindCatalogEvents() {
+      document.querySelectorAll(".fee-card").forEach((card) => {
+        const span = card.querySelector(".qty span");
+        const name = card.dataset.name;
+        const price = +card.dataset.price;
+        card.querySelector(".plus").addEventListener("click", () => {
+          const q = +span.textContent + 1;
+          span.textContent = q;
+          upsertFee(name, price, q);
+        });
+        card.querySelector(".minus").addEventListener("click", () => {
+          const q = Math.max(0, +span.textContent - 1);
+          span.textContent = q;
+          upsertFee(name, price, q);
+        });
+      });
+
+      document.querySelectorAll(".add-cottage").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const card = btn.closest(".cottage-card");
+          const name = card.dataset.name + " Rental";
+          if (cart.some((i) => i.name === name)) return;
+          cart.push({ name, price: +card.dataset.price, qty: 1, type: "property" });
+          card.classList.add("is-selected");
+          renderCart();
+        });
+      });
+
+      document.querySelectorAll(".add-partnership").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const card = btn.closest(".cottage-card");
+          const name = card.dataset.name;
+          if (cart.some((i) => i.name === name)) return;
+          cart.push({ name, price: +card.dataset.price, qty: 1, type: "partnership" });
+          card.classList.add("is-selected");
+          renderCart();
+        });
+      });
+    }
+
+    document.querySelectorAll(".pay-methods button").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".pay-methods button").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+      });
+    });
+
+    function receiptApprover() {
+      try {
+        const session = JSON.parse(localStorage.getItem("maslog_session_v2") || "null");
+        return session?.fullName || document.querySelector(".profile strong")?.textContent || "Staff";
+      } catch {
+        return document.querySelector(".profile strong")?.textContent || "Staff";
+      }
+    }
+
+    function currentTotals() {
+      const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+      const tax = subtotal * 0.12;
+      const discount = 0;
+      return { subtotal, tax, discount, total: subtotal + tax - discount };
+    }
+
+    function receiptPayload(data) {
+      return JSON.stringify({
+        type: "Supplementary Receipt",
+        receiptNo: data.receiptNo,
+        date: data.date,
+        time: data.time,
+        service: data.items.map((item) => `${item.name} x${item.qty}`).join(", "),
+        guestsOrItems: data.guests,
+        paymentMethod: data.method,
+        amountPaid: fmt(data.totals.total),
+        paidOn: data.paidOn,
+        approvedBy: data.approvedBy,
+        source: "walk_in",
+        resort: "Maslog Cold Spring Resort",
+        issuer: "Barangay Maslog, Silangang Samar",
+      });
+    }
+
+    function renderSideReceipt() {
+      const receiptBtn = document.getElementById("receiptBtn");
+      if (!cart.length) {
+        alert("Add items before generating a receipt.");
+        return;
+      }
+      receiptBtn.disabled = true;
+      receiptBtn.lastChild.textContent = " Generating...";
+
+      const now = new Date();
+      const payment = document.querySelector(".pay-methods button.active")?.dataset.pay || "cash";
+      const totals = currentTotals();
+      const guests = cart
+        .filter((item) => item.type === "fee")
+        .reduce((sum, item) => sum + Number(item.qty || 0), 0);
+      const data = {
+        receiptNo: "SUP-" + now.getFullYear() + "-" + String(now.getTime()).slice(-6),
+        date: now.toLocaleDateString("en-PH", { month: "long", day: "numeric", year: "numeric" }),
+        time: now.toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit" }),
+        paidOn: now.toLocaleString("en-PH", { month: "long", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }),
+        method: payment === "gcash" ? "GCash" : "Cash",
+        guests: String(guests || cart.length),
+        approvedBy: receiptApprover(),
+        totals,
+        items: cart.map((item) => ({ ...item })),
+      };
+
+      currentReceiptData = data;
+      currentReceiptSaved = false;
+      document.getElementById("orderTrx").textContent = data.receiptNo;
+      document.getElementById("srNo").textContent = data.receiptNo;
+      document.getElementById("srWhen").textContent = `${data.date} / ${data.time}`;
+      document.getElementById("srMethod").textContent = data.method;
+      document.getElementById("srGuests").textContent = data.guests;
+      document.getElementById("srApprovedBy").textContent = data.approvedBy;
+      document.getElementById("srItems").innerHTML = [
+        ...data.items.map((item) => `
+          <div class="receipt-item-row">
+            <span>${item.name} x${item.qty}</span>
+            <strong>${fmt(item.price * item.qty)}</strong>
+          </div>
+        `),
+        `<div class="receipt-total-row"><span>Subtotal</span><strong>${fmt(data.totals.subtotal)}</strong></div>`,
+        `<div class="receipt-total-row"><span>Tax (12% VAT)</span><strong>${fmt(data.totals.tax)}</strong></div>`,
+        `<div class="receipt-total-row"><span>Discount</span><strong>${fmt(data.totals.discount)}</strong></div>`,
+        `<div class="receipt-total-row grand"><span>Total</span><strong>${fmt(data.totals.total)}</strong></div>`,
+      ].join("");
+      document.getElementById("srQr").src =
+        "https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=8&data=" + encodeURIComponent(receiptPayload(data));
+      document.getElementById("sideReceipt").hidden = false;
+      document.getElementById("sideReceipt").scrollIntoView({ behavior: "smooth", block: "nearest" });
+      receiptBtn.disabled = false;
+      receiptBtn.lastChild.textContent = " Generate Supplementary Receipt";
+    }
+
+    document.getElementById("receiptBtn").addEventListener("click", renderSideReceipt);
+
+    async function saveCurrentReceipt() {
+      if (!currentReceiptData) {
+        alert("Generate a supplementary receipt first.");
+        return false;
+      }
+      if (currentReceiptSaved) return true;
+      if (!window.MaslogDB?.createWalkInTransaction) {
+        alert("Database service is not loaded.");
+        return false;
+      }
+      await MaslogDB.createWalkInTransaction({
+        code: currentReceiptData.receiptNo,
+        items: currentReceiptData.items,
+        paymentMethod: currentReceiptData.method.toLowerCase() === "gcash" ? "gcash" : "cash",
+        subtotal: currentReceiptData.totals.subtotal,
+        tax: currentReceiptData.totals.tax,
+        discount: currentReceiptData.totals.discount,
+        total: currentReceiptData.totals.total,
+        qrPayload: receiptPayload(currentReceiptData),
+      });
+      currentReceiptSaved = true;
+      return true;
+    }
+
+    document.getElementById("srPrintBtn").addEventListener("click", async () => {
+      const btn = document.getElementById("srPrintBtn");
+      const prev = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = "Saving...";
+      try {
+        const saved = await saveCurrentReceipt();
+        if (saved) window.print();
+      } catch (err) {
+        alert(err.message || "Could not save receipt before printing.");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = prev;
+      }
+    });
+
+    document.getElementById("srNewBtn").addEventListener("click", () => {
+      cart.splice(0, cart.length);
+      document.querySelectorAll(".fee-card .qty span").forEach((span) => (span.textContent = "0"));
+      document.getElementById("sideReceipt").hidden = true;
+      document.getElementById("orderTrx").textContent = "No receipt generated";
+      currentReceiptData = null;
+      currentReceiptSaved = false;
+      renderCart();
+    });
+
+    renderCatalog();
+
+    (async function refreshCatalogFromDatabase() {
+      try {
+        if (!window.MaslogDB?.loadStaffFees) return;
+        const fees = await MaslogDB.loadStaffFees();
+        propertyRentals = (fees?.properties || [])
+          .map((p) => ({
+            id: p.id,
+            name: p.name,
+            rate: Number(p.price || 0),
+            features: `${String(p.type || "property").toUpperCase()}${p.description ? " - " + p.description : ""}`,
+            available: p.available !== false,
+          }));
+        if (fees?.partnership) {
+          partnership = { ...partnership, ...fees.partnership };
+        }
+        partnerships = Array.isArray(fees?.partnerships) && fees.partnerships.length
+          ? fees.partnerships
+          : [partnership];
+        renderCatalog();
+        renderCart();
+      } catch {
+        renderPartnership();
+      }
+    })();
+
+    const stamp = document.getElementById("liveStamp");
+    const tick = () => {
+      const now = new Date();
+      stamp.textContent = now.toLocaleString(undefined, {
+        weekday: "long", year: "numeric", month: "long", day: "numeric",
+        hour: "numeric", minute: "2-digit",
+      });
+    };
+    tick();
+    setInterval(tick, 30000);
+
+    renderCart();
+  </script>
+</body>
+</html>

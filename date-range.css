@@ -1,0 +1,92 @@
+/* Shared Day / Week / Month / Custom date range — dropdown */
+.date-range-field {
+  min-width: 220px;
+  flex: 1.1;
+}
+
+.date-range {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.date-range select,
+.date-range [data-preset-select] {
+  width: 100%;
+  border: 1px solid #dde3ea;
+  border-radius: 8px;
+  padding: 0.55rem 2rem 0.55rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 550;
+  font-family: inherit;
+  color: var(--text, #2c3e50);
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237f8c8d' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 0.75rem center;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  outline: none;
+}
+
+.date-range select:focus,
+.date-range [data-preset-select]:focus {
+  border-color: var(--green, #2ecc71);
+  box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.12);
+}
+
+.date-range-custom {
+  display: none;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.date-range-custom.open {
+  display: flex;
+}
+
+.date-range-custom input[type="date"] {
+  border: 1px solid #dde3ea;
+  border-radius: 8px;
+  padding: 0.45rem 0.55rem;
+  font-size: 0.82rem;
+  font-family: inherit;
+  color: var(--text, #2c3e50);
+  background: #fff;
+  min-width: 0;
+  flex: 1;
+}
+
+.date-range-custom input[type="date"]:focus {
+  outline: none;
+  border-color: var(--green, #2ecc71);
+}
+
+.date-range-custom span {
+  font-size: 0.78rem;
+  color: var(--text-muted, #7f8c8d);
+}
+
+.date-range-label {
+  font-size: 0.78rem;
+  color: var(--green-dark, #27ae60);
+  font-weight: 550;
+  margin: 0;
+}
+
+.date-range-bar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  background: var(--white, #fff);
+  border-radius: 14px;
+  padding: 1rem 1.15rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  margin-bottom: 0;
+}
+
+.date-range-bar .date-range-field {
+  max-width: 320px;
+  width: 100%;
+}

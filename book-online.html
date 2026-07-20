@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Maslog Cold Spring — Online Booking</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --green-deep: #0d3b2e;
+      --green-mid: #2d6a4f;
+      --green-bright: #40916c;
+      --green-mint: #e8f5e9;
+      --red: #c62828;
+      --red-soft: #ffebee;
+      --text: #1a2e24;
+      --text-muted: #6b7c74;
+      --bg: #f6f8f6;
+      --white: #ffffff;
+      --serif: "Cormorant Garamond", Georgia, serif;
+      --sans: "Outfit", sans-serif;
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); display: flex; justify-content: center; min-height: 100vh; }
+    a { text-decoration: none; color: inherit; }
+    button { font-family: inherit; border: none; cursor: pointer; background: none; }
+    .phone { width: 100%; max-width: 430px; min-height: 100vh; padding: 0 1.15rem 1.5rem; }
+    .page-bar { position: sticky; top: 0; z-index: 20; display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; padding: 1rem 0 0.85rem; background: rgba(246,248,246,0.92); backdrop-filter: blur(12px); }
+    .back-btn { width: 42px; height: 42px; border-radius: 50%; background: var(--white); display: grid; place-items: center; box-shadow: 0 4px 14px rgba(13,59,46,0.08); color: var(--green-deep); }
+    .page-bar h1 { font-family: var(--serif); font-size: 1.35rem; text-align: center; color: var(--green-deep); }
+    .steps { display: flex; gap: 0.35rem; margin: 0.75rem 0 1rem; overflow-x: auto; padding-bottom: 0.25rem; }
+    .step-dot { flex: 1; min-width: 36px; height: 4px; border-radius: 999px; background: #d5e3da; transition: background 0.2s; }
+    .step-dot.done, .step-dot.active { background: var(--green-mid); }
+    .panel { display: none; animation: fadeUp 0.35s ease both; }
+    .panel.active { display: block; }
+    .card { background: var(--white); border-radius: var(--radius); padding: 1.1rem; box-shadow: 0 6px 20px rgba(13,59,46,0.06); margin-bottom: 0.85rem; }
+    .card h2 { font-size: 1rem; font-weight: 650; color: var(--green-deep); margin-bottom: 0.75rem; }
+    .verified-badge { display: inline-flex; align-items: center; gap: 0.35rem; background: var(--green-mint); color: var(--green-mid); font-size: 0.72rem; font-weight: 600; padding: 0.35rem 0.65rem; border-radius: 999px; margin-bottom: 0.85rem; }
+    .verified-badge svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.2; }
+    .verified-badge.warn { background: #fff3e0; color: #e65100; }
+    .field { margin-bottom: 0.75rem; }
+    .field label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.3rem; }
+    .field input, .field select, .field textarea { width: 100%; border: 1px solid #d8e5dc; border-radius: 12px; padding: 0.65rem 0.8rem; font: inherit; font-size: 0.9rem; background: #fafcfa; }
+    .field input:read-only { background: #f0f5f1; color: var(--text-muted); }
+    .cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+    .cal-head button { width: 36px; height: 36px; border-radius: 50%; background: var(--green-mint); color: var(--green-deep); font-size: 1.1rem; }
+    .cal-head strong { font-size: 0.95rem; color: var(--green-deep); }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.35rem; text-align: center; font-size: 0.78rem; }
+    .cal-grid .dow { font-weight: 600; color: var(--text-muted); padding: 0.25rem 0; }
+    .cal-day { aspect-ratio: 1; border-radius: 10px; display: grid; place-items: center; font-weight: 500; border: 1px solid transparent; transition: 0.15s; }
+    .cal-day.empty { visibility: hidden; }
+    .cal-day.past { color: #b0bdb5; pointer-events: none; }
+    .cal-day.unavail { background: var(--red-soft); color: var(--red); border-color: #ffcdd2; cursor: not-allowed; }
+    .cal-day.avail { background: var(--green-mint); color: var(--green-deep); cursor: pointer; }
+    .cal-day.avail:hover { background: #c8e6c9; }
+    .cal-day.selected { background: var(--green-deep); color: #fff; }
+    .legend { display: flex; gap: 1rem; margin-top: 0.65rem; font-size: 0.72rem; color: var(--text-muted); }
+    .legend span { display: inline-flex; align-items: center; gap: 0.3rem; }
+    .legend i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+    .legend .g { background: var(--green-mint); border: 1px solid #a5d6a7; }
+    .legend .r { background: var(--red-soft); border: 1px solid #ffcdd2; }
+    .prop-cards { display: grid; gap: 0.65rem; }
+    .prop-card { display: grid; grid-template-columns: 72px 1fr auto; gap: 0.65rem; align-items: center; padding: 0.75rem; border-radius: 14px; border: 2px solid #e0ebe3; background: #fafcfa; cursor: pointer; transition: 0.15s; }
+    .prop-card img { width: 72px; height: 72px; border-radius: 10px; object-fit: cover; }
+    .prop-card strong { font-size: 0.9rem; color: var(--green-deep); display: block; }
+    .prop-card small { font-size: 0.75rem; color: var(--text-muted); display: block; margin-top: 0.15rem; }
+    .prop-card .price { font-weight: 700; color: var(--green-mid); font-size: 0.88rem; }
+    .prop-card.unavail { background: var(--red-soft); border-color: #ffcdd2; opacity: 0.85; cursor: not-allowed; }
+    .prop-card.unavail strong, .prop-card.unavail .price { color: var(--red); }
+    .prop-card.booked { background: var(--red-soft); border-color: #ffcdd2; opacity: 0.85; cursor: not-allowed; }
+    .prop-card.booked strong, .prop-card.booked .price { color: var(--red); }
+    .prop-card.selected { border-color: #ffcdd2; background: var(--red-soft); cursor: not-allowed; }
+    .prop-card.selected strong, .prop-card.selected .price { color: var(--red); }
+    .prop-card:disabled { cursor: not-allowed; }
+    .type-tag { font-size: 0.65rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.04em; color: var(--green-bright); }
+    .counter-row { display: flex; align-items: center; justify-content: space-between; padding: 0.65rem 0; border-bottom: 1px solid #edf2ee; }
+    .counter-row:last-child { border-bottom: none; }
+    .counter-row span { font-size: 0.88rem; }
+    .counter-row small { display: block; font-size: 0.72rem; color: var(--text-muted); margin-top: 0.1rem; }
+    .counter { display: flex; align-items: center; gap: 0.5rem; }
+    .counter button { width: 32px; height: 32px; border-radius: 50%; background: var(--green-mint); color: var(--green-deep); font-size: 1.1rem; font-weight: 600; }
+    .counter em { font-style: normal; min-width: 24px; text-align: center; font-weight: 600; }
+    .partner-card { display: flex; gap: 0.85rem; align-items: flex-start; }
+    .partner-card img { width: 56px; height: 56px; border-radius: 12px; object-fit: cover; }
+    .partner-toggle { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+    .toggle { width: 48px; height: 28px; border-radius: 999px; background: #cfd8d2; position: relative; transition: 0.2s; }
+    .toggle.on { background: var(--green-mid); }
+    .toggle::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.15); }
+    .toggle.on::after { left: 23px; }
+    .summary-line { display: flex; justify-content: space-between; font-size: 0.85rem; padding: 0.4rem 0; border-bottom: 1px dashed #e8eee9; }
+    .summary-line.total { border-bottom: none; font-weight: 700; font-size: 1rem; color: var(--green-deep); padding-top: 0.5rem; }
+    .pay-options { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; margin-bottom: 0.85rem; }
+    .pay-opt { padding: 0.85rem; border-radius: 14px; border: 2px solid #e0ebe3; text-align: center; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+    .pay-opt.active { border-color: var(--green-mid); background: var(--green-mint); color: var(--green-deep); }
+    .qr-box { text-align: center; padding: 1rem; background: #fafcfa; border-radius: 14px; border: 1px dashed #c5d5cc; }
+    .qr-box img { width: 180px; height: 180px; object-fit: contain; border-radius: 10px; background: #fff; }
+    .qr-box p { margin-top: 0.5rem; font-size: 0.78rem; color: var(--text-muted); }
+    .agreement { display: flex; gap: 0.6rem; align-items: flex-start; font-size: 0.78rem; color: var(--text-muted); line-height: 1.45; margin: 0.85rem 0; }
+    .agreement input { margin-top: 0.2rem; accent-color: var(--green-mid); }
+    .btn-row { display: flex; gap: 0.65rem; margin-top: 0.5rem; }
+    .btn { flex: 1; padding: 0.8rem 1rem; border-radius: 999px; font-weight: 600; font-size: 0.9rem; text-align: center; }
+    .btn-ghost { background: var(--white); border: 1px solid #d5e3da; color: var(--green-deep); }
+    .btn-primary { background: linear-gradient(165deg, #247a58, var(--green-deep)); color: #fff; box-shadow: 0 8px 20px rgba(13,59,46,0.22); }
+    .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+    .success { text-align: center; padding: 2rem 1rem; }
+    .success svg { width: 64px; height: 64px; stroke: var(--green-bright); fill: none; stroke-width: 1.8; margin-bottom: 1rem; }
+    .success h2 { font-family: var(--serif); font-size: 1.5rem; color: var(--green-deep); margin-bottom: 0.5rem; }
+    .success p { font-size: 0.88rem; color: var(--text-muted); line-height: 1.5; }
+    .toast { position: fixed; left: 50%; bottom: 1.5rem; transform: translateX(-50%) translateY(120%); background: var(--green-deep); color: #fff; padding: 0.65rem 1.1rem; border-radius: 999px; font-size: 0.82rem; z-index: 100; transition: transform 0.25s; max-width: 90%; text-align: center; }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @media (min-width: 431px) { body { padding: 1rem 0; background: #e8eee9; } .phone { border-radius: 28px; box-shadow: 0 20px 50px rgba(13,59,46,0.12); background: var(--bg); } }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <header class="page-bar">
+      <a class="back-btn" href="user-dashboard.html" id="backBtn" aria-label="Back">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      </a>
+      <h1>Online Booking</h1>
+      <span></span>
+    </header>
+
+    <div class="steps" id="stepBar"></div>
+
+    <!-- Step 1: Info -->
+    <section class="panel active" id="panel-info" data-step="0">
+      <div class="card">
+        <h2>Your Information</h2>
+        <div class="verified-badge" id="verifiedBadge">
+          <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <span>Verified Account</span>
+        </div>
+        <div class="field"><label>Full Name</label><input id="fName" type="text" readonly /></div>
+        <div class="field"><label>Mobile Number</label><input id="fPhone" type="tel" readonly /></div>
+        <div class="field"><label>Gmail</label><input id="fEmail" type="email" readonly /></div>
+        <div class="field"><label>Valid ID Type</label><input id="fIdType" type="text" readonly /></div>
+      </div>
+      <div class="btn-row"><button type="button" class="btn btn-primary" id="nextInfo">Continue</button></div>
+    </section>
+
+    <!-- Step 2: Date -->
+    <section class="panel" id="panel-date" data-step="1">
+      <div class="card">
+        <h2>Select Booking Date</h2>
+        <div class="cal-head">
+          <button type="button" id="calPrev" aria-label="Previous month">‹</button>
+          <strong id="calLabel"></strong>
+          <button type="button" id="calNext" aria-label="Next month">›</button>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+        <div class="legend">
+          <span><i class="g"></i> Available</span>
+          <span><i class="r"></i> Not available</span>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button type="button" class="btn btn-ghost" data-back>Back</button>
+        <button type="button" class="btn btn-primary" id="nextDate" disabled>Continue</button>
+      </div>
+    </section>
+
+    <!-- Step 3: Properties -->
+    <section class="panel" id="panel-props" data-step="2">
+      <div class="card">
+        <h2>Property Rentals</h2>
+        <p style="font-size:0.78rem;color:var(--text-muted);margin:-0.4rem 0 0.75rem;">Rates from Admin System Configuration. Red items are not available on your selected date.</p>
+        <div class="prop-cards" id="propCards"></div>
+      </div>
+      <div class="btn-row">
+        <button type="button" class="btn btn-ghost" data-back>Back</button>
+        <button type="button" class="btn btn-primary" id="nextProps" disabled>Continue</button>
+      </div>
+    </section>
+
+    <!-- Step 4: Entrance -->
+    <section class="panel" id="panel-entrance" data-step="3">
+      <div class="card">
+        <h2>Entrance — How Many Persons?</h2>
+        <div id="entranceRows"></div>
+      </div>
+      <div class="btn-row">
+        <button type="button" class="btn btn-ghost" data-back>Back</button>
+        <button type="button" class="btn btn-primary" id="nextEntrance">Continue</button>
+      </div>
+    </section>
+
+    <!-- Step 5: Partnership -->
+    <section class="panel" id="panel-partner" data-step="4">
+      <div class="card">
+        <h2>Partnership <span style="font-weight:400;color:var(--text-muted);font-size:0.82rem;">(Optional)</span></h2>
+        <div class="partner-card" id="partnerInfo"></div>
+        <div class="partner-toggle" style="margin-top:1rem;">
+          <span style="font-size:0.88rem;font-weight:600;">Add partnership to booking</span>
+          <button type="button" class="toggle" id="partnerToggle" aria-label="Toggle partnership"></button>
+        </div>
+        <div id="partnerOptions" hidden>
+          <div class="field" style="margin-top:0.75rem;">
+            <label>Rate Type</label>
+            <select id="partnerRate">
+              <option value="hour">Per Hour</option>
+              <option value="day">Per Day</option>
+            </select>
+          </div>
+          <div class="field" id="partnerHoursField">
+            <label>Number of Hours</label>
+            <input id="partnerHours" type="number" min="1" max="12" value="1" />
+          </div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button type="button" class="btn btn-ghost" data-back>Back</button>
+        <button type="button" class="btn btn-primary" id="nextPartner">View Summary</button>
+      </div>
+    </section>
+
+    <!-- Step 6: Summary -->
+    <section class="panel" id="panel-summary" data-step="5">
+      <div class="card">
+        <h2>Booking Summary</h2>
+        <div id="summaryLines"></div>
+      </div>
+      <div class="btn-row">
+        <button type="button" class="btn btn-ghost" data-back>Back</button>
+        <button type="button" class="btn btn-primary" id="nextSummary">Proceed to Payment</button>
+      </div>
+    </section>
+
+    <!-- Step 7: Payment -->
+    <section class="panel" id="panel-payment" data-step="6">
+      <div class="card">
+        <h2>Payment</h2>
+        <p style="font-size:0.85rem;font-weight:700;color:var(--green-deep);margin-bottom:0.75rem;" id="payTotal"></p>
+        <div class="pay-options">
+          <button type="button" class="pay-opt active" data-pay="cash">Cash</button>
+          <button type="button" class="pay-opt" data-pay="gcash">GCash</button>
+        </div>
+        <div id="gcashPanel" hidden>
+          <div class="qr-box">
+            <img id="gcashQr" src="" alt="GCash QR Code" />
+            <p id="gcashInfo"></p>
+          </div>
+        </div>
+        <div id="cashNote" style="font-size:0.78rem;color:var(--text-muted);padding:0.5rem 0;">Pay at the resort counter on your booking date.</div>
+        <label class="agreement">
+          <input type="checkbox" id="agreeCheck" />
+          <span id="agreeText"></span>
+        </label>
+      </div>
+      <div class="btn-row">
+        <button type="button" class="btn btn-ghost" data-back>Back</button>
+        <button type="button" class="btn btn-primary" id="confirmPay" disabled>Confirm Booking</button>
+      </div>
+    </section>
+
+    <!-- Success -->
+    <section class="panel" id="panel-success" data-step="7">
+      <div class="card success">
+        <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        <h2>Booking Submitted!</h2>
+        <p id="successMsg">Your booking is pending staff approval. You can track it in My Bookings.</p>
+        <div class="btn-row" style="margin-top:1.25rem;">
+          <a class="btn btn-ghost" href="my-bookings.html">My Bookings</a>
+          <a class="btn btn-primary" href="user-dashboard.html">Home</a>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="maslog-db.js"></script>
+  <script src="user-app.js"></script>
+  <script>
+    const STEP_LABELS = ["Info", "Date", "Property", "Entrance", "Partner", "Summary", "Payment"];
+    let step = 0;
+    let calYear, calMonth;
+    const booking = {
+      date: "",
+      propertyId: "",
+      entrance: { adult: 1, child: 0, senior: 0 },
+      partner: false,
+      partnerRate: "hour",
+      partnerHours: 1,
+      payment: "cash",
+    };
+
+    let user = null;
+    let fees = null;
+    let settings = null;
+    let bookedPropertyIds = [];
+    const toast = document.getElementById("toast");
+
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add("show");
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => toast.classList.remove("show"), 2600);
+    }
+
+    function rentalProperties() {
+      return fees.properties || [];
+    }
+
+    function isPropertyBooked(propertyId) {
+      return bookedPropertyIds.includes(String(propertyId));
+    }
+
+    function isPropertyBlocked(property) {
+      return property.available === false
+        || MaslogUser.isPropertyUnavailable(property.id, fees, settings)
+        || isPropertyBooked(property.id);
+    }
+
+    async function refreshBookedProperties() {
+      bookedPropertyIds = [];
+      if (!booking.date || !MaslogDB.listBookedPropertyIds) return;
+      try {
+        bookedPropertyIds = await MaslogDB.listBookedPropertyIds(booking.date);
+      } catch (err) {
+        showToast("Could not check booked properties");
+      }
+    }
+
+    (async function initBookingPage() {
+      const session = MaslogConfig.getSession();
+      if (!session || session.role !== "client") {
+        location.href = "index.html";
+        return;
+      }
+
+      user = await MaslogDB.getCurrentClient();
+      fees = await MaslogDB.loadFees();
+      settings = await MaslogDB.loadSettings();
+
+      if (!user) {
+        showToast("Client profile not found");
+        document.getElementById("nextInfo").disabled = true;
+        return;
+      }
+
+    function renderStepBar() {
+      document.getElementById("stepBar").innerHTML = STEP_LABELS.map((_, i) =>
+        `<div class="step-dot${i < step ? " done" : ""}${i === step ? " active" : ""}"></div>`
+      ).join("");
+    }
+
+    function goStep(n) {
+      step = n;
+      document.querySelectorAll(".panel").forEach((p) => p.classList.toggle("active", +p.dataset.step === step));
+      renderStepBar();
+      if (step === 5) renderSummary();
+      if (step === 6) renderPayment();
+    }
+
+    // Step 1 — auto-fill
+    const verified = MaslogUser.isUserVerified(user);
+    const badge = document.getElementById("verifiedBadge");
+    if (verified) {
+      badge.innerHTML = '<svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><span>Verified Account</span>';
+    } else {
+      badge.className = "verified-badge warn";
+      badge.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>Pending Verification</span>';
+    }
+    document.getElementById("fName").value = user.fullName || "";
+    document.getElementById("fPhone").value = user.phone || "";
+    document.getElementById("fEmail").value = user.email || "";
+    document.getElementById("fIdType").value = user.idType || "";
+
+    document.getElementById("nextInfo").addEventListener("click", () => {
+      if (!user.fullName || !user.email) { showToast("Complete registration first"); return; }
+      if (!verified) { showToast("Account must be verified before booking"); return; }
+      goStep(1);
+      initCalendar();
+    });
+
+    // Calendar
+    function initCalendar() {
+      const now = new Date();
+      calYear = now.getFullYear();
+      calMonth = now.getMonth();
+      renderCalendar();
+    }
+
+    function renderCalendar() {
+      const grid = document.getElementById("calGrid");
+      const label = document.getElementById("calLabel");
+      const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+      label.textContent = monthNames[calMonth] + " " + calYear;
+      const first = new Date(calYear, calMonth, 1);
+      const startDow = first.getDay();
+      const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+      const today = new Date(); today.setHours(0,0,0,0);
+      let html = ["Su","Mo","Tu","We","Th","Fr","Sa"].map((d) => `<div class="dow">${d}</div>`).join("");
+      for (let i = 0; i < startDow; i++) html += '<div class="cal-day empty"></div>';
+      for (let d = 1; d <= daysInMonth; d++) {
+        const ds = `${calYear}-${String(calMonth+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+        const dt = new Date(calYear, calMonth, d);
+        const past = dt < today;
+        const unavail = MaslogUser.isDateUnavailable(ds, settings);
+        let cls = "cal-day";
+        if (past) cls += " past";
+        else if (unavail) cls += " unavail";
+        else cls += " avail";
+        if (booking.date === ds) cls += " selected";
+        html += `<button type="button" class="${cls}" data-date="${ds}" ${past || unavail ? "disabled" : ""}>${d}</button>`;
+      }
+      grid.innerHTML = html;
+        grid.querySelectorAll(".cal-day.avail").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          if (booking.date !== btn.dataset.date) {
+            booking.propertyId = "";
+            document.getElementById("nextProps").disabled = true;
+          }
+          booking.date = btn.dataset.date;
+          document.getElementById("nextDate").disabled = false;
+          renderCalendar();
+        });
+      });
+    }
+
+    document.getElementById("calPrev").addEventListener("click", () => {
+      calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; }
+      renderCalendar();
+    });
+    document.getElementById("calNext").addEventListener("click", () => {
+      calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; }
+      renderCalendar();
+    });
+    document.getElementById("nextDate").addEventListener("click", async () => {
+      await refreshBookedProperties();
+      renderProps();
+      goStep(2);
+    });
+
+    // Properties
+    function renderProps() {
+      const wrap = document.getElementById("propCards");
+      const rentals = rentalProperties();
+      if (!rentals.length) {
+        wrap.innerHTML = '<p style="font-size:0.85rem;color:var(--text-muted);line-height:1.4;">No rental properties are available from staff properties yet.</p>';
+        document.getElementById("nextProps").disabled = true;
+        return;
+      }
+      wrap.innerHTML = rentals.map((p) => {
+        const booked = isPropertyBooked(p.id);
+        const unavail = p.available === false || MaslogUser.isPropertyUnavailable(p.id, fees, settings);
+        const thumb = (p.pictures || []).find(Boolean) || "backg.png";
+        const sel = booking.propertyId === p.id ? " selected" : "";
+        const blocked = unavail || booked || !!sel;
+        const status = booked
+          ? "<small style='color:var(--red);font-weight:700;'>Already booked</small>"
+          : unavail
+            ? "<small style='color:var(--red);font-weight:700;'>Not available</small>"
+            : sel
+              ? "<small style='color:var(--red);font-weight:700;'>Selected</small>"
+              : "";
+        return `<button type="button" class="prop-card${booked ? " booked" : ""}${unavail ? " unavail" : ""}${sel}" data-id="${p.id}" ${blocked ? "disabled" : ""}>
+          <img src="${thumb}" alt="" />
+          <div><span class="type-tag">${p.type}</span><strong>${p.name}</strong><small>${p.description || ""}</small>${status}</div>
+          <span class="price">${MaslogUser.formatMoney(p.price)}</span>
+        </button>`;
+      }).join("");
+      wrap.querySelectorAll(".prop-card:not(:disabled)").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          booking.propertyId = btn.dataset.id;
+          document.getElementById("nextProps").disabled = false;
+          renderProps();
+        });
+      });
+    }
+    document.getElementById("nextProps").addEventListener("click", () => goStep(3));
+
+    // Entrance
+    const ef = settings.entranceFees;
+    const entranceTypes = [
+      { key: "adult", label: "Adult", price: ef.adult },
+      { key: "child", label: "Child", price: ef.child },
+      { key: "senior", label: "Senior / PWD", price: ef.senior },
+    ];
+    document.getElementById("entranceRows").innerHTML = entranceTypes.map((t) => `
+      <div class="counter-row">
+        <span>${t.label}<small>${MaslogUser.formatMoney(t.price)} each</small></span>
+        <div class="counter" data-key="${t.key}">
+          <button type="button" data-d="-1">−</button>
+          <em>${booking.entrance[t.key]}</em>
+          <button type="button" data-d="1">+</button>
+        </div>
+      </div>`).join("");
+    document.querySelectorAll(".counter").forEach((row) => {
+      const key = row.dataset.key;
+      row.querySelectorAll("button").forEach((b) => {
+        b.addEventListener("click", () => {
+          const d = +b.dataset.d;
+          booking.entrance[key] = Math.max(key === "adult" ? 1 : 0, booking.entrance[key] + d);
+          row.querySelector("em").textContent = booking.entrance[key];
+        });
+      });
+    });
+    document.getElementById("nextEntrance").addEventListener("click", () => { renderPartner(); goStep(4); });
+
+    // Partnership
+    const partner = fees.partnership;
+    document.getElementById("partnerInfo").innerHTML = `
+      <img src="${partner.logo || "backg.png"}" alt="" />
+      <div><strong style="color:var(--green-deep);">${partner.name}</strong>
+      <p style="font-size:0.78rem;color:var(--text-muted);margin-top:0.25rem;line-height:1.4;">${partner.description || ""}</p>
+      <p style="font-size:0.82rem;font-weight:600;color:var(--green-mid);margin-top:0.35rem;">${MaslogUser.formatMoney(partner.perHour)}/hr · ${MaslogUser.formatMoney(partner.perDay)}/day</p></div>`;
+
+    function renderPartner() {
+      document.getElementById("partnerToggle").classList.toggle("on", booking.partner);
+      document.getElementById("partnerOptions").hidden = !booking.partner;
+    }
+    document.getElementById("partnerToggle").addEventListener("click", () => {
+      booking.partner = !booking.partner;
+      renderPartner();
+    });
+    document.getElementById("partnerRate").addEventListener("change", (e) => {
+      booking.partnerRate = e.target.value;
+      document.getElementById("partnerHoursField").hidden = e.target.value !== "hour";
+    });
+    document.getElementById("partnerHours").addEventListener("input", (e) => {
+      booking.partnerHours = Math.max(1, +e.target.value || 1);
+    });
+    document.getElementById("nextPartner").addEventListener("click", () => goStep(5));
+
+    // Totals
+    function calcTotal() {
+      const prop = rentalProperties().find((p) => p.id === booking.propertyId);
+      let total = prop ? prop.price : 0;
+      entranceTypes.forEach((t) => { total += (booking.entrance[t.key] || 0) * t.price; });
+      if (booking.partner) {
+        total += booking.partnerRate === "day" ? partner.perDay : partner.perHour * booking.partnerHours;
+      }
+      return { total, prop };
+    }
+
+    function renderSummary() {
+      const { total, prop } = calcTotal();
+      const persons = booking.entrance.adult + booking.entrance.child + booking.entrance.senior;
+      let lines = [
+        ["Guest", user.fullName],
+        ["Date", MaslogUser.formatDate(booking.date)],
+        ["Property", prop ? prop.name : "—"],
+        ["Entrance", `${persons} person(s)`],
+      ];
+      entranceTypes.forEach((t) => {
+        if (booking.entrance[t.key]) lines.push([`${t.label} × ${booking.entrance[t.key]}`, MaslogUser.formatMoney(booking.entrance[t.key] * t.price)]);
+      });
+      if (prop) lines.push(["Property fee", MaslogUser.formatMoney(prop.price)]);
+      if (booking.partner) {
+        const pl = booking.partnerRate === "day" ? "Partnership (day)" : `Partnership (${booking.partnerHours} hr)`;
+        const pa = booking.partnerRate === "day" ? partner.perDay : partner.perHour * booking.partnerHours;
+        lines.push([pl, MaslogUser.formatMoney(pa)]);
+      }
+      document.getElementById("summaryLines").innerHTML = lines.map(([k,v]) =>
+        `<div class="summary-line"><span>${k}</span><span>${v}</span></div>`
+      ).join("") + `<div class="summary-line total"><span>Total</span><span>${MaslogUser.formatMoney(total)}</span></div>`;
+    }
+
+    function renderPayment() {
+      const { total } = calcTotal();
+      document.getElementById("payTotal").textContent = "Amount due: " + MaslogUser.formatMoney(total);
+      document.getElementById("agreeText").textContent = settings.agreement;
+      const qr = settings.gcashQr || "backg.png";
+      document.getElementById("gcashQr").src = qr;
+      document.getElementById("gcashInfo").textContent = `Send to ${settings.gcashName} · ${settings.gcashNumber}`;
+    }
+
+    document.querySelectorAll(".pay-opt").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        booking.payment = btn.dataset.pay;
+        document.querySelectorAll(".pay-opt").forEach((b) => b.classList.toggle("active", b === btn));
+        document.getElementById("gcashPanel").hidden = booking.payment !== "gcash";
+        document.getElementById("cashNote").hidden = booking.payment === "gcash";
+      });
+    });
+
+    document.getElementById("agreeCheck").addEventListener("change", (e) => {
+      document.getElementById("confirmPay").disabled = !e.target.checked;
+    });
+
+    document.getElementById("nextSummary").addEventListener("click", () => goStep(6));
+
+    document.getElementById("confirmPay").addEventListener("click", async () => {
+      const { total, prop } = calcTotal();
+      const btn = document.getElementById("confirmPay");
+      btn.disabled = true;
+      btn.textContent = "Submitting...";
+      try {
+        await refreshBookedProperties();
+        if (!prop || isPropertyBlocked(prop)) {
+          showToast("Please choose an available property");
+          renderProps();
+          goStep(2);
+          btn.disabled = false;
+          btn.textContent = "Confirm Booking";
+          return;
+        }
+        const row = await MaslogDB.saveBooking({
+          status: "pending",
+          fullName: user.fullName,
+          email: user.email,
+          phone: user.phone,
+          date: booking.date,
+          propertyId: booking.propertyId,
+          propertyName: prop?.name || "",
+          entrance: { ...booking.entrance },
+          partner: booking.partner,
+          partnerRate: booking.partnerRate,
+          partnerHours: booking.partnerHours,
+          payment: booking.payment,
+          total,
+          createdAt: new Date().toISOString(),
+        });
+        const id = row?.booking_code || row?.bookingCode || row?.id || "Booking";
+        document.getElementById("successMsg").textContent =
+          `Booking ${id} submitted (${booking.payment === "gcash" ? "GCash" : "Cash"}). Pending staff approval.`;
+        goStep(7);
+      } catch (err) {
+        showToast(err.message || "Failed to submit booking");
+        btn.disabled = false;
+        btn.textContent = "Confirm Booking";
+      }
+    });
+
+    document.querySelectorAll("[data-back]").forEach((btn) => {
+      btn.addEventListener("click", () => goStep(step - 1));
+    });
+
+    renderStepBar();
+    })().catch((err) => {
+      showToast(err.message || "Failed to load booking form");
+      document.getElementById("nextInfo").disabled = true;
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QR Verification — Maslog Cold Spring</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="admin.css?v=6" />
+  <link rel="stylesheet" href="admin-extra.css?v=5" />
+  <script>localStorage.setItem("portal", "staff");</script>
+  <script src="portal-nav.js" defer></script>
+  <script src="admin-logout.js" defer></script>
+  <style>
+    .brand p { color: #76c893; }
+
+    .qr-layout {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 1.15rem;
+    }
+
+    .scan-panel {
+      text-align: center;
+      padding: 2rem 1.5rem;
+    }
+
+    .scan-frame {
+      width: min(100%, 280px);
+      aspect-ratio: 1;
+      margin: 0 auto 1.25rem;
+      border-radius: 20px;
+      border: 2px dashed rgba(13, 59, 46, 0.25);
+      background:
+        linear-gradient(135deg, rgba(46, 204, 113, 0.08), rgba(13, 59, 46, 0.06)),
+        #f7faf8;
+      display: grid;
+      place-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .scan-frame.is-camera-open {
+      display: none;
+    }
+
+    .scan-frame::before {
+      content: "";
+      position: absolute;
+      left: 12%;
+      right: 12%;
+      height: 2px;
+      background: #27ae60;
+      top: 28%;
+      animation: scan 2.4s ease-in-out infinite;
+      box-shadow: 0 0 12px rgba(39, 174, 96, 0.55);
+    }
+
+    @keyframes scan {
+      0%, 100% { top: 18%; opacity: 0.4; }
+      50% { top: 78%; opacity: 1; }
+    }
+
+    .scan-frame svg {
+      width: 72px;
+      height: 72px;
+      stroke: var(--green-dark);
+      fill: none;
+      stroke-width: 1.5;
+      opacity: 0.7;
+    }
+
+    .scan-panel h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 0.35rem;
+    }
+
+    .scan-panel p {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin-bottom: 1.25rem;
+    }
+
+    .manual-row {
+      display: flex;
+      gap: 0.5rem;
+      max-width: 360px;
+      margin: 0 auto;
+    }
+
+    .manual-row input {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.7rem 0.9rem;
+      font-size: 0.9rem;
+      font-family: inherit;
+      outline: none;
+    }
+
+    .manual-row input:focus {
+      border-color: #76c893;
+      box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.15);
+    }
+
+    .scan-actions {
+      display: flex;
+      justify-content: center;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      margin: 0.9rem auto 0;
+    }
+
+    .camera-reader {
+      width: min(100%, 320px);
+      min-height: 0;
+      margin: 1rem auto 0;
+      overflow: hidden;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: #fff;
+    }
+
+    .camera-reader[hidden] { display: none !important; }
+    #startScanBtn[hidden],
+    #stopScanBtn[hidden] { display: none !important; }
+
+    .camera-reader video {
+      width: 100% !important;
+      max-height: 320px !important;
+      object-fit: cover !important;
+      border-radius: 12px;
+    }
+
+    .camera-reader canvas {
+      max-width: 100% !important;
+    }
+
+    .camera-reader img {
+      max-width: 100% !important;
+    }
+
+    .camera-reader > div {
+      width: 100% !important;
+      border: 0 !important;
+      box-shadow: none !important;
+    }
+
+    .camera-reader #qr-shaded-region {
+      border-width: 36px !important;
+    }
+
+    .result-card .badge-ok {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: #e8f8ef;
+      color: #1e8449;
+      font-size: 0.78rem;
+      font-weight: 650;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      margin-bottom: 1rem;
+    }
+
+    .result-card .badge-ok.warn {
+      background: #fff7e6;
+      color: #b26a00;
+    }
+
+    .result-card .badge-ok.bad {
+      background: #fdecec;
+      color: #b42318;
+    }
+
+    .result-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .result-rows .row {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      padding-bottom: 0.7rem;
+      border-bottom: 1px dashed var(--border);
+      font-size: 0.9rem;
+    }
+
+    .result-rows .row:last-child { border-bottom: none; padding-bottom: 0; }
+    .result-rows span { color: var(--text-muted); }
+    .result-rows strong { color: var(--text); font-weight: 650; text-align: right; }
+
+    .sidebar-user {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.85rem 0.75rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .sidebar-user .av {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #76c893, #2ecc71);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-size: 0.75rem;
+      font-weight: 650;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .sidebar-user .av::after {
+      content: "";
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #2ecc71;
+      border: 2px solid var(--sidebar-bg);
+    }
+
+    .sidebar-user strong {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .sidebar-user span {
+      font-size: 0.7rem;
+      color: rgba(255, 255, 255, 0.65);
+    }
+
+    @media (max-width: 960px) {
+      .qr-layout { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M17 8C8 10 5.9 16.17 3.82 21.67L5.71 22l1-2.3A24.09 24.09 0 0 0 12 17c5-3 7-8 7-11a3 3 0 0 0-2-2.82M9.09 17c2.46-2.71 4.91-4.94 8.54-6.68C16.91 14.87 13.54 16.62 9.09 17m8.4-11.57A1 1 0 0 1 19 6c0 1.91-1.02 5.07-3.16 7.72C12.91 10.35 10.18 8.29 6.39 7.41c1.56-.57 3.28-.91 5.11-.91 2.2 0 4.34.46 6-.1Z"/></svg>
+        </div>
+        <div>
+          <h1>Maslog Cold Spring</h1>
+          <p>Staff Portal</p>
+        </div>
+      </div>
+      <p class="menu-label">Main Menu</p>
+      <nav class="nav">
+        <a href="staff-dashboard.html"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>Dashboard</a>
+        <a href="walk-in-transaction.html"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>Walk-in Transaction</a>
+        <a href="online-booking.html"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>Online Booking</a>
+        <a href="transaction-history.html"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Sales History</a>
+        <a class="active" href="qr-verification.html"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3"/><path d="M14 17h7"/><path d="M17 14v7"/></svg>QR Verification</a>
+        <a href="user-management.html"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>User Management</a>
+      </nav>
+      <div class="sidebar-user">
+        <div class="av" aria-hidden="true">NF</div>
+        <div><strong>Neneth Fabilla</strong><span>Staff</span></div>
+      </div>
+      <a class="btn-logout" href="index.html"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Log-Out</a>
+    </aside>
+
+    <main class="main">
+      <header class="hero">
+        <div class="page-title">
+          <h2>QR Verification</h2>
+          <p>Scan or enter a booking QR code to verify entry.</p>
+        </div>
+        <div class="top-actions">
+          <form class="search-group" onsubmit="return false;">
+            <div class="field">
+              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input type="search" placeholder="Search customer by name or ID..." />
+            </div>
+            <button class="btn-search" type="submit">SEARCH</button>
+          </form>
+          <div class="profile">
+            <div class="avatar-fallback">NF</div>
+            <div><strong>Neneth Fabilla</strong><span>Staff</span></div>
+          </div>
+        </div>
+      </header>
+
+      <div class="content">
+        <div class="qr-layout">
+          <section class="card scan-panel">
+            <div class="scan-frame" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3"/><path d="M14 17h7"/><path d="M17 14v7"/></svg>
+            </div>
+            <h3>Ready to scan</h3>
+            <p>Point the camera at a guest QR e-receipt, or enter the code manually.</p>
+            <form class="manual-row" id="qrForm">
+              <input type="text" id="qrCode" placeholder="Enter QR or receipt code" required />
+              <button type="submit" class="btn btn-primary">Verify</button>
+            </form>
+            <div class="scan-actions">
+              <button type="button" class="btn btn-secondary" id="startScanBtn">Open Camera</button>
+              <button type="button" class="btn btn-secondary" id="stopScanBtn" hidden>Stop Camera</button>
+            </div>
+            <div class="camera-reader" id="qrReader" hidden></div>
+          </section>
+
+          <section class="card result-card" id="resultCard" hidden>
+            <span class="badge-ok" id="resultBadge">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6 9 17l-5-5"/></svg>
+              <span id="resultBadgeText">Verified</span>
+            </span>
+            <div class="result-rows">
+              <div class="row"><span>Receipt / Booking ID</span><strong id="rId">-</strong></div>
+              <div class="row"><span>Guest / Customer</span><strong id="rGuest">-</strong></div>
+              <div class="row"><span>Date / Time</span><strong id="rWhen">-</strong></div>
+              <div class="row"><span>Guests</span><strong id="rGuests">-</strong></div>
+              <div class="row"><span>Package / Service</span><strong id="rCottage">-</strong></div>
+              <div class="row"><span>Payment</span><strong id="rPay">-</strong></div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="maslog-db.js"></script>
+  <script src="https://unpkg.com/html5-qrcode/html5-qrcode.min.js"></script>
+  <script>
+    const qrForm = document.getElementById("qrForm");
+    const qrInput = document.getElementById("qrCode");
+    const resultCard = document.getElementById("resultCard");
+    const resultBadge = document.getElementById("resultBadge");
+    const resultBadgeText = document.getElementById("resultBadgeText");
+    const startScanBtn = document.getElementById("startScanBtn");
+    const stopScanBtn = document.getElementById("stopScanBtn");
+    const qrReader = document.getElementById("qrReader");
+    const scanFrame = document.querySelector(".scan-frame");
+    let scanner = null;
+    let scanning = false;
+
+    function normalizeCode(value) {
+      return String(value || "").trim().replace(/^#/, "");
+    }
+
+    function parseQrValue(value) {
+      const raw = normalizeCode(value);
+      if (!raw) throw new Error("Enter or scan a receipt QR code.");
+
+      try {
+        const parsed = JSON.parse(raw);
+        return { raw, payload: parsed, code: normalizeCode(parsed.receiptNo || parsed.bookingId || parsed.bookingCode || parsed.id) };
+      } catch (_) {
+        try {
+          const url = new URL(raw);
+          const data = url.searchParams.get("data") || url.searchParams.get("qr") || url.searchParams.get("code");
+          if (data) return parseQrValue(data);
+        } catch (_) {}
+      }
+
+      return { raw, payload: null, code: raw };
+    }
+
+    function paymentLabel(value) {
+      const v = String(value || "cash").toLowerCase();
+      return v === "gcash" ? "GCash" : "Cash";
+    }
+
+    function setResult(kind, title, data) {
+      resultBadge.className = "badge-ok" + (kind === "warn" ? " warn" : kind === "bad" ? " bad" : "");
+      resultBadgeText.textContent = title;
+      document.getElementById("rId").textContent = data.id || "-";
+      document.getElementById("rGuest").textContent = data.guest || "-";
+      document.getElementById("rWhen").textContent = data.when || "-";
+      document.getElementById("rGuests").textContent = data.guests || "-";
+      document.getElementById("rCottage").textContent = data.service || "-";
+      document.getElementById("rPay").textContent = data.payment || "-";
+      resultCard.hidden = false;
+      resultCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    function resultFromPayload(payload, code) {
+      return {
+        id: code || payload?.receiptNo || "-",
+        guest: payload?.receivedFrom || payload?.customer || "Walk-in Guest",
+        when: [payload?.date, payload?.time].filter(Boolean).join(" / ") || "-",
+        guests: payload?.guestsOrItems || payload?.guests || "-",
+        service: payload?.service || "-",
+        payment: [payload?.paymentMethod, payload?.amountPaid, payload?.approvedBy ? `Approved by ${payload.approvedBy}` : ""].filter(Boolean).join(" / ") || "-",
+      };
+    }
+
+    async function verifyQr(value) {
+      const parsed = parseQrValue(value);
+      const code = parsed.code || normalizeCode(parsed.payload?.receiptNo);
+
+      if (!window.MaslogDB?.listAdminBookings) {
+        throw new Error("Database service is not loaded.");
+      }
+
+      const bookings = await MaslogDB.listAdminBookings();
+      const booking = bookings.find((b) => normalizeCode(b.code).toLowerCase() === normalizeCode(code).toLowerCase());
+
+      if (booking) {
+        const status = String(booking.status || "").toLowerCase();
+        const isValid = ["confirmed", "approved", "completed"].includes(status);
+        const isPending = status === "pending";
+        const alreadyUsed = isValid && await MaslogDB.hasValidQrVerification(booking.id);
+        if (isValid && !alreadyUsed) {
+          await MaslogDB.recordQrVerification({
+            bookingId: booking.id,
+            result: "valid",
+            notes: `Checked in from QR Verification page (${booking.code})`,
+          });
+        } else if (alreadyUsed) {
+          await MaslogDB.recordQrVerification({
+            bookingId: booking.id,
+            result: "already_used",
+            notes: `Repeated QR scan (${booking.code})`,
+          });
+        } else if (!isValid) {
+          await MaslogDB.recordQrVerification({
+            bookingId: booking.id,
+            result: isPending ? "invalid" : "invalid",
+            notes: `${isPending ? "Pending" : "Invalid/cancelled"} booking scanned (${booking.code})`,
+          });
+        }
+        setResult(
+          alreadyUsed ? "warn" : isValid ? "ok" : isPending ? "warn" : "bad",
+          alreadyUsed ? "Already Used" : isValid ? "Checked In" : isPending ? "Pending Booking" : "Invalid / Cancelled",
+          {
+            id: booking.code,
+            guest: booking.customer,
+            when: `${booking.date || "-"} / ${parsed.payload?.time || "09:00 AM"}`,
+            guests: String(booking.guests || parsed.payload?.guestsOrItems || "-"),
+            service: booking.propertyName,
+            payment: `${paymentLabel(booking.payment)} / ${MaslogDB.formatMoney ? MaslogDB.formatMoney(booking.total) : booking.total}`,
+          }
+        );
+        return;
+      }
+
+      if (parsed.payload?.receiptNo) {
+        setResult("warn", "Receipt Scanned", resultFromPayload(parsed.payload, code));
+        return;
+      }
+
+      setResult("bad", "Not Found", {
+        id: code || "-",
+        guest: "-",
+        when: "-",
+        guests: "-",
+        service: "No matching booking in database",
+        payment: "-",
+      });
+    }
+
+    async function stopScanner() {
+      if (!scanner || !scanning) return;
+      await scanner.stop();
+      scanning = false;
+      qrReader.hidden = true;
+      stopScanBtn.hidden = true;
+      startScanBtn.hidden = false;
+      scanFrame.classList.remove("is-camera-open");
+    }
+
+    async function startScanner() {
+      if (!window.Html5Qrcode) {
+        alert("Camera scanner library did not load. You can still paste or type the receipt code.");
+        return;
+      }
+      qrReader.hidden = false;
+      startScanBtn.hidden = true;
+      stopScanBtn.hidden = false;
+      scanFrame.classList.add("is-camera-open");
+      scanner = scanner || new Html5Qrcode("qrReader");
+      scanning = true;
+      await scanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 240, height: 240 } },
+        async (decodedText) => {
+          qrInput.value = decodedText;
+          await stopScanner();
+          await verifyQr(decodedText);
+        }
+      );
+    }
+
+    qrForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      try {
+        await verifyQr(qrInput.value);
+      } catch (err) {
+        setResult("bad", "Invalid QR", {
+          id: normalizeCode(qrInput.value) || "-",
+          guest: "-",
+          when: "-",
+          guests: "-",
+          service: err.message || "Could not verify QR",
+          payment: "-",
+        });
+      }
+    });
+
+    startScanBtn.addEventListener("click", async () => {
+      try {
+        await startScanner();
+      } catch (err) {
+        alert(err.message || "Could not open camera.");
+        qrReader.hidden = true;
+        stopScanBtn.hidden = true;
+        startScanBtn.hidden = false;
+        scanFrame.classList.remove("is-camera-open");
+      }
+    });
+    stopScanBtn.addEventListener("click", stopScanner);
+  </script>
+</body>
+</html>

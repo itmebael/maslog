@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Maslog Cold Spring — Home</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --green-deep: #0d3b2e;
+      --green: #1b5e45;
+      --green-mid: #2d6a4f;
+      --green-bright: #40916c;
+      --green-soft: #d8f3dc;
+      --green-mint: #e8f5e9;
+      --text: #1a2e24;
+      --text-muted: #6b7c74;
+      --bg: #f6f8f6;
+      --white: #ffffff;
+      --serif: "Cormorant Garamond", Georgia, serif;
+      --sans: "Outfit", sans-serif;
+      --radius: 18px;
+      --nav-h: 88px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      min-height: 100%;
+    }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+    }
+
+    a { text-decoration: none; color: inherit; }
+    button { font-family: inherit; border: none; cursor: pointer; background: none; }
+
+    .phone {
+      width: 100%;
+      max-width: 430px;
+      min-height: 100vh;
+      background: var(--bg);
+      position: relative;
+      padding: 1.35rem 1.25rem calc(var(--nav-h) + 1.5rem);
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ——— Header ——— */
+    .top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      animation: fadeUp 0.5s ease both;
+      position: relative;
+      z-index: 80;
+    }
+
+    .greeting {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.92rem;
+      font-weight: 500;
+      color: var(--green-mid);
+      margin-bottom: 0.2rem;
+    }
+
+    .greeting svg {
+      width: 16px;
+      height: 16px;
+      fill: var(--green-bright);
+    }
+
+    .top h1 {
+      font-family: var(--serif);
+      font-size: clamp(1.55rem, 5.5vw, 1.85rem);
+      font-weight: 700;
+      color: var(--green-deep);
+      line-height: 1.15;
+      letter-spacing: -0.01em;
+    }
+
+    .top .welcome {
+      margin-top: 0.35rem;
+      font-size: 0.84rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      line-height: 1.45;
+      max-width: 260px;
+    }
+
+    .bell {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: var(--white);
+      box-shadow: 0 4px 14px rgba(13, 59, 46, 0.08);
+      display: grid;
+      place-items: center;
+      position: relative;
+      flex-shrink: 0;
+      color: var(--green-deep);
+      transition: transform 0.2s ease;
+    }
+
+    .bell-wrap {
+      position: relative;
+      flex-shrink: 0;
+      z-index: 90;
+    }
+
+    .bell.active {
+      background: var(--green-mint);
+      color: var(--green-mid);
+    }
+
+    .notif-panel {
+      position: absolute;
+      top: calc(100% + 0.65rem);
+      right: 0;
+      width: min(320px, calc(100vw - 2.5rem));
+      max-height: 380px;
+      background: var(--white);
+      border-radius: 18px;
+      box-shadow: 0 16px 40px rgba(13, 59, 46, 0.18);
+      border: 1px solid rgba(13, 59, 46, 0.06);
+      z-index: 100;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      animation: notifDrop 0.22s ease both;
+    }
+
+    .notif-panel.open {
+      display: flex;
+    }
+
+    .notif-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.9rem 1rem 0.75rem;
+      border-bottom: 1px solid #edf2ee;
+    }
+
+    .notif-head h2 {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--green-deep);
+    }
+
+    .notif-head button {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--green-mid);
+      padding: 0.25rem 0.45rem;
+      border-radius: 8px;
+    }
+
+    .notif-head button:hover {
+      background: var(--green-mint);
+    }
+
+    .notif-list {
+      overflow-y: auto;
+      max-height: 300px;
+      padding: 0.35rem 0;
+    }
+
+    .notif-item {
+      display: grid;
+      grid-template-columns: 36px 1fr;
+      gap: 0.65rem;
+      padding: 0.75rem 1rem;
+      text-align: left;
+      width: 100%;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+
+    .notif-item:hover {
+      background: #f7faf8;
+    }
+
+    .notif-item.unread {
+      background: rgba(232, 245, 233, 0.45);
+    }
+
+    .notif-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--green-mint);
+      color: var(--green-deep);
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+    }
+
+    .notif-icon svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    .notif-item.unread .notif-icon {
+      background: var(--green-deep);
+      color: #fff;
+    }
+
+    .notif-body strong {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 650;
+      color: var(--green-deep);
+      margin-bottom: 0.15rem;
+      line-height: 1.3;
+    }
+
+    .notif-body p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .notif-body time {
+      display: block;
+      margin-top: 0.25rem;
+      font-size: 0.68rem;
+      color: #9aaba2;
+    }
+
+    .notif-empty {
+      padding: 2rem 1rem;
+      text-align: center;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .notif-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 70;
+      display: none;
+      background: rgba(13, 59, 46, 0.12);
+    }
+
+    .notif-backdrop.open {
+      display: block;
+    }
+
+    @keyframes notifDrop {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .bell:hover { transform: scale(1.05); }
+
+    .bell svg {
+      width: 20px;
+      height: 20px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+    }
+
+    .bell .badge {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 4px;
+      border-radius: 999px;
+      background: var(--green-bright);
+      color: #fff;
+      font-size: 0.65rem;
+      font-weight: 700;
+      display: grid;
+      place-items: center;
+      border: 2px solid var(--white);
+    }
+
+    .bell .badge[hidden] {
+      display: none;
+    }
+
+    /* ——— Featured carousel ——— */
+    .featured-wrap {
+      position: relative;
+      animation: fadeUp 0.55s 0.08s ease both;
+    }
+
+    .featured {
+      position: relative;
+      height: 240px;
+      border-radius: 22px;
+      overflow: hidden;
+      color: #fff;
+      box-shadow: 0 12px 32px rgba(13, 59, 46, 0.18);
+      background:
+        linear-gradient(160deg, rgba(8, 40, 28, 0.25) 0%, rgba(8, 40, 28, 0.75) 100%),
+        url("backg.png") center / cover no-repeat;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 1.25rem 1.3rem 1.5rem;
+    }
+
+    .featured .tag {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: rgba(13, 59, 46, 0.55);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 999px;
+      padding: 0.35rem 0.75rem;
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .featured .tag svg {
+      width: 12px;
+      height: 12px;
+      fill: #b5e48c;
+    }
+
+    .featured h2 {
+      font-family: var(--serif);
+      font-size: 1.65rem;
+      font-weight: 700;
+      line-height: 1.1;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    }
+
+    .featured .tagline {
+      margin-top: 0.25rem;
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: #b5e48c;
+    }
+
+    .featured .desc {
+      margin-top: 0.35rem;
+      font-size: 0.8rem;
+      font-weight: 300;
+      color: rgba(255, 255, 255, 0.88);
+      max-width: 240px;
+    }
+
+    .btn-explore {
+      margin-top: 0.95rem;
+      align-self: flex-start;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      background: var(--white);
+      color: var(--green-deep);
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.6rem 1.1rem;
+      border-radius: 999px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .btn-explore:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-explore svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    .dots {
+      display: flex;
+      justify-content: center;
+      gap: 0.4rem;
+      margin-top: 0.85rem;
+    }
+
+    .dots button {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #c5d5cc;
+      transition: width 0.25s ease, background 0.25s ease;
+    }
+
+    .dots button.active {
+      width: 20px;
+      border-radius: 999px;
+      background: var(--green-mid);
+    }
+
+    /* ——— Action grid ——— */
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.85rem;
+      animation: fadeUp 0.6s 0.16s ease both;
+    }
+
+    .action-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 1.1rem 1rem 1rem;
+      box-shadow: 0 6px 20px rgba(13, 59, 46, 0.06);
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      position: relative;
+      min-height: 140px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .action-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 28px rgba(13, 59, 46, 0.1);
+    }
+
+    .action-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: var(--green-mint);
+      color: var(--green-deep);
+      display: grid;
+      place-items: center;
+      margin-bottom: 0.45rem;
+    }
+
+    .action-icon svg {
+      width: 20px;
+      height: 20px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+    }
+
+    .action-card h3 {
+      font-size: 0.95rem;
+      font-weight: 650;
+      color: var(--green-deep);
+    }
+
+    .action-card p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      line-height: 1.35;
+      padding-right: 1.5rem;
+    }
+
+    .action-go {
+      position: absolute;
+      right: 0.85rem;
+      bottom: 0.85rem;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--green-mint);
+      color: var(--green-deep);
+      display: grid;
+      place-items: center;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .action-card:hover .action-go {
+      background: var(--green-deep);
+      color: #fff;
+    }
+
+    .action-go svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2.2;
+    }
+
+    /* ——— Bottom nav (curved floating dock) ——— */
+    .bottom-nav {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: max(0.75rem, env(safe-area-inset-bottom));
+      width: calc(100% - 1.75rem);
+      max-width: 400px;
+      height: 68px;
+      z-index: 50;
+      display: grid;
+      grid-template-columns: 1fr 88px 1fr;
+      align-items: center;
+      padding: 0 0.35rem 0.15rem;
+    }
+
+    .nav-shell {
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      filter: drop-shadow(0 10px 24px rgba(13, 59, 46, 0.14));
+    }
+
+    .nav-shell svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.28rem;
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: #8a9a92;
+      padding: 0.5rem 0.75rem;
+      transition: color 0.2s ease, transform 0.2s ease;
+      z-index: 1;
+    }
+
+    .nav-item svg {
+      width: 22px;
+      height: 22px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.7;
+    }
+
+    .nav-item:hover {
+      color: var(--green-mid);
+      transform: translateY(-1px);
+    }
+
+    .nav-item.active {
+      color: var(--green-mid);
+      font-weight: 600;
+    }
+
+    .nav-home {
+      position: relative;
+      top: -30px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.35rem;
+      color: var(--green-mid);
+      font-size: 0.72rem;
+      font-weight: 600;
+      z-index: 2;
+    }
+
+    .nav-home .fab {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(165deg, #247a58 0%, var(--green-deep) 100%);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      border: 5px solid var(--bg);
+      box-shadow:
+        0 12px 28px rgba(13, 59, 46, 0.38),
+        0 0 0 8px rgba(64, 145, 108, 0.1);
+      transition: transform 0.22s ease, box-shadow 0.22s ease;
+    }
+
+    .nav-home:hover .fab {
+      transform: scale(1.05) translateY(-2px);
+      box-shadow:
+        0 16px 32px rgba(13, 59, 46, 0.42),
+        0 0 0 10px rgba(64, 145, 108, 0.14);
+    }
+
+    .nav-home .fab svg {
+      width: 24px;
+      height: 24px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.9;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (min-width: 431px) {
+      body { padding: 1rem 0; background: #e8eee9; }
+      .phone {
+        min-height: calc(100vh - 2rem);
+        border-radius: 28px;
+        box-shadow: 0 20px 50px rgba(13, 59, 46, 0.12);
+      }
+      .bottom-nav {
+        bottom: 1.1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <header class="top">
+      <div>
+        <p class="greeting">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 8C8 10 5.9 16.17 3.82 21.67L5.71 22l1-2.3A24.09 24.09 0 0 0 12 17c5-3 7-8 7-11a3 3 0 0 0-2-2.82Z"/></svg>
+          <span id="greetingText">Good morning,</span>
+        </p>
+        <h1 id="clientName">Client!</h1>
+        <p class="welcome">Welcome back! Let's make another great escape.</p>
+      </div>
+      <div class="bell-wrap">
+        <button type="button" class="bell" id="bellBtn" aria-expanded="false" aria-haspopup="true" aria-controls="notifPanel" aria-label="Notifications">
+          <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="badge" id="notifBadge" hidden>0</span>
+        </button>
+        <div class="notif-panel" id="notifPanel" role="dialog" aria-label="Notifications">
+          <div class="notif-head">
+            <h2>Notifications</h2>
+            <button type="button" id="markAllRead">Mark all read</button>
+          </div>
+          <div class="notif-list" id="notifList"></div>
+        </div>
+      </div>
+    </header>
+
+    <section class="featured-wrap" aria-label="Featured destination">
+      <article class="featured" id="featuredCard">
+        <span class="tag">
+          <svg viewBox="0 0 24 24"><path d="M17 8C8 10 5.9 16.17 3.82 21.67L5.71 22l1-2.3A24.09 24.09 0 0 0 12 17c5-3 7-8 7-11a3 3 0 0 0-2-2.82Z"/></svg>
+          Featured Destination
+        </span>
+        <h2 id="featTitle">Maslog Cold Spring</h2>
+        <p class="tagline" id="featTagline">Nature. Relaxation. Memories.</p>
+        <p class="desc" id="featDesc">Your escape to nature's refreshing embrace.</p>
+        <a class="btn-explore" href="#">
+          Explore Now
+          <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+      </article>
+      <div class="dots" role="tablist" aria-label="Featured slides">
+        <button type="button" class="active" data-i="0" aria-label="Slide 1"></button>
+        <button type="button" data-i="1" aria-label="Slide 2"></button>
+        <button type="button" data-i="2" aria-label="Slide 3"></button>
+        <button type="button" data-i="3" aria-label="Slide 4"></button>
+        <button type="button" data-i="4" aria-label="Slide 5"></button>
+      </div>
+    </section>
+
+    <section class="actions" aria-label="Quick actions">
+      <a class="action-card" href="book-online.html">
+        <div class="action-icon">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M12 14v4"/><path d="M10 16h4"/></svg>
+        </div>
+        <h3>Online Booking</h3>
+        <p>Book your visit</p>
+        <span class="action-go" aria-hidden="true"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></span>
+      </a>
+
+      <a class="action-card" href="my-bookings.html">
+        <div class="action-icon">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
+        </div>
+        <h3>My Bookings</h3>
+        <p>View your bookings</p>
+        <span class="action-go" aria-hidden="true"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></span>
+      </a>
+
+      <a class="action-card" href="e-receipts.html">
+        <div class="action-icon">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+        </div>
+        <h3>E-Receipts</h3>
+        <p>Access digital receipts</p>
+        <span class="action-go" aria-hidden="true"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></span>
+      </a>
+
+      <a class="action-card" href="customer-service.html">
+        <div class="action-icon">
+          <svg viewBox="0 0 24 24"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3z"/><path d="M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+        </div>
+        <h3>Customer Service</h3>
+        <p>Get help and support</p>
+        <span class="action-go" aria-hidden="true"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></span>
+      </a>
+    </section>
+  </div>
+
+  <nav class="bottom-nav" aria-label="Main navigation">
+    <div class="nav-shell" aria-hidden="true">
+      <svg viewBox="0 0 400 68" preserveAspectRatio="none">
+        <path
+          fill="#ffffff"
+          d="M28 0
+             H148
+             C158 0 164 6 170 14
+             C178 28 190 36 200 36
+             C210 36 222 28 230 14
+             C236 6 242 0 252 0
+             H372
+             C388 0 400 12 400 28
+             V68 H0 V28
+             C0 12 12 0 28 0 Z"
+        />
+      </svg>
+    </div>
+    <a class="nav-item" href="partnership.html">
+      <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Partnership
+    </a>
+    <a class="nav-home" href="user-dashboard.html" aria-current="page">
+      <span class="fab" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z"/><path d="M9 21V12h6v9"/></svg>
+      </span>
+      Home
+    </a>
+    <a class="nav-item" href="profile.html">
+      <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      Profile
+    </a>
+  </nav>
+
+  <div class="notif-backdrop" id="notifBackdrop" aria-hidden="true"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="maslog-db.js"></script>
+  <script src="user-app.js"></script>
+  <script>
+    const session = MaslogConfig.getSession();
+    if (!session || session.role !== "client") {
+      location.href = "index.html";
+    }
+
+    const hour = new Date().getHours();
+    const greeting =
+      hour < 12 ? "Good morning," :
+      hour < 18 ? "Good afternoon," : "Good evening,";
+    document.getElementById("greetingText").textContent = greeting;
+
+    (async function loadClientHeader() {
+      const nameEl = document.getElementById("clientName");
+      try {
+        const client = await MaslogDB.getCurrentClient();
+        const displayName = client?.fullName || "Client";
+        nameEl.textContent = displayName + "!";
+      } catch {
+        nameEl.textContent = "Client!";
+      }
+    })();
+
+    const slides = [
+      { image: "1.jpg", title: "Maslog Cold Spring", tagline: "Nature. Relaxation. Memories.", desc: "Your escape to nature's refreshing embrace." },
+      { image: "2.jpg", title: "Crystal Clear Pools", tagline: "Cool. Fresh. Serene.", desc: "Dive into turquoise waters framed by lush forest." },
+      { image: "3.jpg", title: "Family Cottages", tagline: "Comfort by the spring.", desc: "Book open-air cottages for your next gathering." },
+      { image: "4.jpg", title: "Weekend Escape", tagline: "Unwind. Recharge. Return.", desc: "Plan your perfect day trip to Maslog." },
+      { image: "5.jpg", title: "Springside Moments", tagline: "Gather. Swim. Celebrate.", desc: "Enjoy a refreshing resort day with family and friends." },
+    ];
+
+    let current = 0;
+    const titleEl = document.getElementById("featTitle");
+    const tagEl = document.getElementById("featTagline");
+    const descEl = document.getElementById("featDesc");
+    const dots = [...document.querySelectorAll(".dots button")];
+
+    function showSlide(i) {
+      current = i;
+      const s = slides[i];
+      titleEl.textContent = s.title;
+      tagEl.textContent = s.tagline;
+      descEl.textContent = s.desc;
+      document.getElementById("featuredCard").style.backgroundImage =
+        `linear-gradient(160deg, rgba(8, 40, 28, 0.25) 0%, rgba(8, 40, 28, 0.75) 100%), url("${s.image}")`;
+      dots.forEach((d, idx) => d.classList.toggle("active", idx === i));
+    }
+
+    dots.forEach((btn) => btn.addEventListener("click", () => showSlide(+btn.dataset.i)));
+    showSlide(0);
+    setInterval(() => showSlide((current + 1) % slides.length), 5000);
+
+    const bellBtn = document.getElementById("bellBtn");
+    const notifPanel = document.getElementById("notifPanel");
+    const notifBackdrop = document.getElementById("notifBackdrop");
+    const notifList = document.getElementById("notifList");
+    const notifBadge = document.getElementById("notifBadge");
+    let notifications = [];
+
+    const notifIcons = {
+      booking: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/>',
+      account: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+      promo: '<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>',
+      payment: '<rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>',
+      info: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>',
+    };
+
+    function timeAgo(ts) {
+      const diff = Date.now() - ts;
+      const mins = Math.floor(diff / 60000);
+      if (mins < 1) return "Just now";
+      if (mins < 60) return mins + "m ago";
+      const hrs = Math.floor(mins / 60);
+      if (hrs < 24) return hrs + "h ago";
+      const days = Math.floor(hrs / 24);
+      if (days < 7) return days + "d ago";
+      return new Date(ts).toLocaleDateString("en-PH", { month: "short", day: "numeric" });
+    }
+
+    function updateBadge() {
+      const unread = notifications.filter((n) => !n.read).length;
+      notifBadge.textContent = unread;
+      notifBadge.hidden = unread === 0;
+      bellBtn.setAttribute("aria-label", unread ? `Notifications, ${unread} unread` : "Notifications");
+    }
+
+    function renderNotifs() {
+      if (!notifications.length) {
+        notifList.innerHTML = '<p class="notif-empty">No notifications yet.</p>';
+        return;
+      }
+      notifList.innerHTML = notifications
+        .sort((a, b) => b.time - a.time)
+        .map((n) => `
+          <button type="button" class="notif-item${n.read ? "" : " unread"}" data-id="${n.id}" data-href="${n.href || ""}">
+            <span class="notif-icon"><svg viewBox="0 0 24 24">${notifIcons[n.type] || notifIcons.info}</svg></span>
+            <span class="notif-body">
+              <strong>${n.title}</strong>
+              <p>${n.message}</p>
+              <time>${timeAgo(n.time)}</time>
+            </span>
+          </button>`)
+        .join("");
+
+      notifList.querySelectorAll(".notif-item").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const id = btn.dataset.id;
+          const item = notifications.find((n) => n.id === id);
+          if (item) item.read = true;
+          updateBadge();
+          renderNotifs();
+          await MaslogDB.markNotificationsRead(session.userId, [id]);
+          if (btn.dataset.href) location.href = btn.dataset.href;
+        });
+      });
+    }
+
+    async function loadNotifications() {
+      try {
+        notifications = await MaslogDB.listNotifications(session.userId);
+      } catch {
+        notifications = [];
+      }
+      updateBadge();
+      renderNotifs();
+    }
+
+    function setNotifOpen(open) {
+      notifPanel.classList.toggle("open", open);
+      notifBackdrop.classList.toggle("open", open);
+      bellBtn.classList.toggle("active", open);
+      bellBtn.setAttribute("aria-expanded", open);
+      if (open) renderNotifs();
+    }
+
+    bellBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      setNotifOpen(!notifPanel.classList.contains("open"));
+    });
+
+    notifPanel.addEventListener("click", (e) => {
+      e.stopPropagation();
+    });
+
+    notifBackdrop.addEventListener("click", () => setNotifOpen(false));
+
+    document.getElementById("markAllRead").addEventListener("click", async () => {
+      notifications.forEach((n) => { n.read = true; });
+      updateBadge();
+      renderNotifs();
+      await MaslogDB.markNotificationsRead(session.userId);
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") setNotifOpen(false);
+    });
+
+    loadNotifications();
+  </script>
+</body>
+</html>
+

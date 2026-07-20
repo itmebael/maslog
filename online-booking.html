@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Online Booking — Maslog Cold Spring</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="admin.css?v=6" />
+  <link rel="stylesheet" href="admin-extra.css?v=5" />
+  <link rel="stylesheet" href="date-range.css?v=2" />
+  <script src="portal-nav.js" defer></script>
+  <script src="admin-logout.js" defer></script>
+  <script src="date-range.js?v=2" defer></script>
+  <style>
+    .monitor-only { display: none !important; }
+    #bookingBody .actions,
+    #bookingBody td:nth-child(9) {
+      display: none !important;
+    }
+    #bookingBody tr[data-code] { cursor: pointer; }
+    #bookingBody tr[data-code]:hover { background: #f8fafb; }
+    .booking-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      background: rgba(8, 28, 18, 0.48);
+    }
+    .booking-modal-backdrop.open { display: flex; }
+    .booking-modal {
+      width: min(680px, 100%);
+      max-height: min(720px, calc(100vh - 2rem));
+      overflow: auto;
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+    }
+    .booking-modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 1.15rem 1.25rem;
+      border-bottom: 1px solid #edf1ef;
+    }
+    .booking-modal-head h3 { margin: 0.2rem 0 0; color: #1b4332; }
+    .booking-modal-head p { margin: 0; font-size: 0.78rem; color: #7f8c8d; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+    .modal-close {
+      width: 36px;
+      height: 36px;
+      border: 0;
+      border-radius: 50%;
+      background: #f3f6f4;
+      color: #1b4332;
+      cursor: pointer;
+      font-size: 1.4rem;
+      line-height: 1;
+    }
+    .booking-modal-body {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem;
+      padding: 1.25rem;
+    }
+    .booking-detail-cell {
+      border: 1px solid #e5ece8;
+      border-radius: 12px;
+      padding: 0.85rem;
+      background: #fbfdfc;
+      min-width: 0;
+    }
+    .booking-detail-cell.span-2 { grid-column: 1 / -1; }
+    .booking-detail-cell span {
+      display: block;
+      margin-bottom: 0.28rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #7f8c8d;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .booking-detail-cell strong {
+      display: block;
+      color: #1b4332;
+      font-size: 0.95rem;
+      line-height: 1.35;
+      word-break: break-word;
+    }
+    .booking-modal-actions {
+      display: none;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      padding: 0 1.25rem 1.25rem;
+    }
+    .booking-modal-actions.open { display: flex; }
+    .booking-action-btn {
+      border: 0;
+      border-radius: 10px;
+      padding: 0.72rem 1.1rem;
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+      min-width: 108px;
+    }
+    .booking-action-btn:disabled {
+      cursor: wait;
+      opacity: 0.72;
+    }
+    .booking-action-btn.accept { background: #27ae60; }
+    .booking-action-btn.reject { background: #e74c3c; }
+    .booking-action-btn.release { background: #1f7a8c; }
+    @media (max-width: 640px) {
+      .booking-modal-body { grid-template-columns: 1fr; }
+      .booking-detail-cell.span-2 { grid-column: auto; }
+      .booking-modal-actions { flex-direction: column; }
+      .booking-action-btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M17 8C8 10 5.9 16.17 3.82 21.67L5.71 22l1-2.3A24.09 24.09 0 0 0 12 17c5-3 7-8 7-11a3 3 0 0 0-2-2.82M9.09 17c2.46-2.71 4.91-4.94 8.54-6.68C16.91 14.87 13.54 16.62 9.09 17m8.4-11.57A1 1 0 0 1 19 6c0 1.91-1.02 5.07-3.16 7.72C12.91 10.35 10.18 8.29 6.39 7.41c1.56-.57 3.28-.91 5.11-.91 2.2 0 4.34.46 6-.1Z"/></svg>
+        </div>
+        <div>
+          <h1>Maslog Cold Spring</h1>
+          <p>Admin Portal</p>
+        </div>
+      </div>
+      <p class="menu-label">Main Menu</p>
+      <nav class="nav">
+        <a href="admin-dashboard.html"><svg viewBox="0 0 24 24"><path d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M12 2v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="M2 12h2"/><path d="m4.93 19.07 1.41-1.41"/><path d="M19.07 4.93l-1.41 1.41"/><path d="M20 12h2"/><path d="M12 20v2"/><path d="m16 16 3 3"/><path d="M12 13v5"/></svg>Dashboard</a>
+        <a href="staff-account.html"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Staff Account</a>
+        <a href="user-management.html"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>User Management</a>
+        <a href="sales-monitoring.html"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>Sales Monitoring</a>
+        <a href="revenue-report.html"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>Revenue Report</a>
+        <a class="active" href="online-booking.html"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>Online Booking</a>
+        <a href="walk-in-transaction.html"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>Walk-In Transaction</a>
+        <a href="transaction-history.html"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Transaction History</a>
+        <a href="system-configuration.html"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v2"/><path d="M12 21v2"/><path d="m4.22 4.22 1.42 1.42"/><path d="m18.36 18.36 1.42 1.42"/><path d="M1 12h2"/><path d="M21 12h2"/><path d="m4.22 19.78 1.42-1.42"/><path d="m18.36 5.64 1.42-1.42"/></svg>System Configuration</a>
+        </nav>
+      <a class="btn-logout" href="index.html"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Log-Out</a>
+    </aside>
+
+    <main class="main">
+      <header class="hero">
+        <div class="page-title">
+          <h2>Online Booking</h2>
+          <p>Dashboard / Booking / <span style="color:#b5e48c;">All Bookings</span></p>
+        </div>
+        <div class="top-actions">
+          <form class="search-group" onsubmit="return false;">
+            <div class="field">
+              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input type="search" placeholder="Search booking..." />
+            </div>
+            <button class="btn-search" type="submit">SEARCH</button>
+          </form>
+          <div class="profile">
+            <div class="avatar-fallback">AB</div>
+            <div><strong>Arianne B.</strong><span>Administrator</span></div>
+          </div>
+        </div>
+      </header>
+
+      <div class="content">
+        <section class="stats-row cols-4">
+          <article class="stat-card colored blue">
+            <p class="label">Total Booking</p>
+            <p class="value" id="statTotalBookings">0</p>
+          </article>
+          <article class="stat-card colored green">
+            <p class="label">Confirmed Bookings</p>
+            <p class="value" id="statConfirmedBookings">0</p>
+          </article>
+          <article class="stat-card colored teal">
+            <p class="label">Pending Bookings</p>
+            <p class="value" id="statPendingBookings">0</p>
+          </article>
+          <article class="stat-card colored orange">
+            <p class="label">Cancelled Bookings</p>
+            <p class="value" id="statCancelledBookings">0</p>
+          </article>
+        </section>
+
+        <form class="filters" onsubmit="return false;">
+          <div class="filter-field" style="flex:1;min-width:180px;">
+            <label for="searchBooking">Search Booking</label>
+            <input id="searchBooking" type="search" placeholder="ID, name, or contact..." />
+          </div>
+          <div class="filter-field date-range-field" data-date-range data-default="month">
+            <label>Date Range</label>
+            <div class="date-range">
+              <select data-preset-select aria-label="Date range">
+                <option value="day">Day</option>
+                <option value="week">Week</option>
+                <option value="month">Month</option>
+                <option value="custom">Custom</option>
+              </select>
+              <div class="date-range-custom">
+                <input type="date" data-from aria-label="From date" />
+                <span>to</span>
+                <input type="date" data-to aria-label="To date" />
+              </div>
+              <p class="date-range-label" data-label></p>
+            </div>
+          </div>
+          <div class="filter-field">
+            <label for="bookStatus">Status</label>
+            <select id="bookStatus">
+              <option>All Status</option>
+              <option>Confirmed</option>
+              <option>Pending</option>
+              <option>Cancelled</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary">Filter</button>
+        </form>
+
+        <div class="monitor-only" style="display:flex;justify-content:flex-end;">
+          <button type="button" class="btn btn-primary">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            New Booking
+          </button>
+        </div>
+
+        <section class="card">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Booking ID</th>
+                  <th>Customer</th>
+                  <th>Contact</th>
+                  <th>Date</th>
+                  <th>Package / Service</th>
+                  <th>Guests</th>
+                  <th>Status</th>
+                  <th>Amount</th>
+                </tr>
+              </thead>
+              <tbody id="bookingBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+  <div class="booking-modal-backdrop" id="bookingModal" aria-hidden="true">
+    <article class="booking-modal" role="dialog" aria-modal="true" aria-labelledby="bookingModalTitle">
+      <div class="booking-modal-head">
+        <div>
+          <p>Booking Information</p>
+          <h3 id="bookingModalTitle">Booking</h3>
+        </div>
+        <button type="button" class="modal-close" id="closeBookingModal" aria-label="Close">&times;</button>
+      </div>
+      <div class="booking-modal-body" id="bookingDetailBody"></div>
+      <div class="booking-modal-actions" id="bookingModalActions">
+        <button type="button" class="booking-action-btn reject" id="rejectBookingBtn">Reject</button>
+        <button type="button" class="booking-action-btn release" id="releaseBookingBtn">Release Cottage</button>
+        <button type="button" class="booking-action-btn accept" id="acceptBookingBtn">Accept</button>
+      </div>
+    </article>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="maslog-db.js"></script>
+  <script>
+    const bookingBody = document.getElementById("bookingBody");
+    const statusFilter = document.getElementById("bookStatus");
+    const bookingSearch = document.getElementById("searchBooking");
+    const bookingModal = document.getElementById("bookingModal");
+    const bookingDetailBody = document.getElementById("bookingDetailBody");
+    const closeBookingModal = document.getElementById("closeBookingModal");
+    const bookingModalActions = document.getElementById("bookingModalActions");
+    const acceptBookingBtn = document.getElementById("acceptBookingBtn");
+    const rejectBookingBtn = document.getElementById("rejectBookingBtn");
+    const releaseBookingBtn = document.getElementById("releaseBookingBtn");
+    let adminBookings = [];
+    let selectedBooking = null;
+
+    function money(n) {
+      return MaslogDB.formatMoney ? MaslogDB.formatMoney(n) : "PHP " + Number(n || 0).toLocaleString("en-PH");
+    }
+
+    function dateLabel(date) {
+      if (!date) return "";
+      return new Date(String(date).slice(0, 10) + "T12:00:00").toLocaleDateString("en-PH", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+    }
+
+    function statusClass(status) {
+      const s = String(status || "").toLowerCase();
+      if (s === "confirmed" || s === "approved" || s === "completed") return "confirmed";
+      if (s === "cancelled" || s === "rejected") return "cancelled";
+      return "pending";
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (ch) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      }[ch]));
+    }
+
+    function paymentLabel(value) {
+      const v = String(value || "cash").toLowerCase();
+      return v === "gcash" ? "GCash" : "Cash";
+    }
+
+    function openBookingDetails(code) {
+      const booking = adminBookings.find((b) => String(b.code) === String(code));
+      if (!booking) return;
+      selectedBooking = booking;
+
+      document.getElementById("bookingModalTitle").textContent = booking.code || "Booking";
+      const guestBreakdown = [
+        `${booking.adults || 0} adult${Number(booking.adults || 0) === 1 ? "" : "s"}`,
+        `${booking.children || 0} child${Number(booking.children || 0) === 1 ? "" : "ren"}`,
+        `${booking.seniors || 0} senior/PWD`,
+      ].join(" / ");
+
+      const fields = [
+        ["Booking ID", booking.code || "-"],
+        ["Customer", booking.customer || "-"],
+        ["Contact", booking.contact || "-"],
+        ["Date", dateLabel(booking.date) || "-"],
+        ["Package / Service", booking.propertyName || "-"],
+        ["Guests", `${booking.guests || 0} (${guestBreakdown})`],
+        ["Booking Status", booking.status || "pending"],
+        ["Payment Status", booking.paymentStatus || "pending"],
+        ["Payment Method", paymentLabel(booking.payment)],
+        ["Amount", money(booking.total)],
+        ["Submitted", booking.createdAt ? new Date(booking.createdAt).toLocaleString("en-PH", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }) : "-"],
+        ["Notes", booking.notes || "-", "span-2"],
+      ];
+
+      bookingDetailBody.innerHTML = fields.map(([label, value, cls]) => `
+        <div class="booking-detail-cell ${cls || ""}">
+          <span>${label}</span>
+          <strong>${escapeHtml(value)}</strong>
+        </div>
+      `).join("");
+      const currentStatus = String(booking.status || "").toLowerCase();
+      const isPending = currentStatus === "pending";
+      const isConfirmed = currentStatus === "confirmed" || currentStatus === "approved";
+      bookingModalActions.classList.toggle("open", isPending || isConfirmed);
+      acceptBookingBtn.hidden = !isPending;
+      rejectBookingBtn.hidden = !isPending;
+      releaseBookingBtn.hidden = !isConfirmed;
+      bookingModal.classList.add("open");
+      bookingModal.setAttribute("aria-hidden", "false");
+    }
+
+    function closeDetails() {
+      bookingModal.classList.remove("open");
+      bookingModal.setAttribute("aria-hidden", "true");
+      selectedBooking = null;
+      bookingModalActions.classList.remove("open");
+    }
+
+    async function changeSelectedBookingStatus(status) {
+      if (!selectedBooking?.id) return;
+      const buttons = [acceptBookingBtn, rejectBookingBtn, releaseBookingBtn];
+      buttons.forEach((btn) => (btn.disabled = true));
+      try {
+        await MaslogDB.updateBookingStatus(selectedBooking.id, status);
+        adminBookings = await MaslogDB.listAdminBookings();
+        updateBookingStats(adminBookings);
+        renderBookings();
+        window.dispatchEvent(new Event("maslog:booking-status-changed"));
+        closeDetails();
+      } catch (err) {
+        alert(err.message || "Failed to update booking status");
+      } finally {
+        buttons.forEach((btn) => (btn.disabled = false));
+      }
+    }
+
+    function updateBookingStats(list) {
+      document.getElementById("statTotalBookings").textContent = list.length;
+      document.getElementById("statConfirmedBookings").textContent = list.filter((b) => ["confirmed", "approved", "completed"].includes(String(b.status).toLowerCase())).length;
+      document.getElementById("statPendingBookings").textContent = list.filter((b) => String(b.status).toLowerCase() === "pending").length;
+      document.getElementById("statCancelledBookings").textContent = list.filter((b) => ["cancelled", "rejected"].includes(String(b.status).toLowerCase())).length;
+    }
+
+    function renderBookings() {
+      const q = bookingSearch.value.trim().toLowerCase();
+      const wantedStatus = statusFilter.value.toLowerCase();
+      const filtered = adminBookings.filter((b) => {
+        const text = [b.code, b.customer, b.contact, b.propertyName].join(" ").toLowerCase();
+        const matchesText = !q || text.includes(q);
+        const matchesStatus = wantedStatus === "all status" || String(b.status).toLowerCase() === wantedStatus;
+        return matchesText && matchesStatus;
+      });
+
+      if (!filtered.length) {
+        bookingBody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#6b7280;padding:1.2rem;">No online bookings found in the database</td></tr>';
+        return;
+      }
+
+      bookingBody.innerHTML = filtered.map((b) => `
+        <tr data-code="${escapeHtml(b.code || "")}" data-date="${String(b.date || "").slice(0, 10)}" tabindex="0">
+          <td class="link-id">${escapeHtml(b.code || "")}</td>
+          <td>${escapeHtml(b.customer || "")}</td>
+          <td>${escapeHtml(b.contact || "")}</td>
+          <td>${dateLabel(b.date)}</td>
+          <td>${escapeHtml(b.propertyName || "")}</td>
+          <td>${b.guests || 0}</td>
+          <td><span class="tag ${statusClass(b.status)}">${escapeHtml(b.status || "pending")}</span></td>
+          <td>${money(b.total)}</td>
+        </tr>
+      `).join("");
+
+      bookingBody.querySelectorAll("tr[data-code]").forEach((row) => {
+        row.addEventListener("click", () => openBookingDetails(row.dataset.code));
+        row.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            openBookingDetails(row.dataset.code);
+          }
+        });
+      });
+    }
+
+    bookingSearch.addEventListener("input", renderBookings);
+    statusFilter.addEventListener("change", renderBookings);
+    acceptBookingBtn.addEventListener("click", () => changeSelectedBookingStatus("confirmed"));
+    rejectBookingBtn.addEventListener("click", () => changeSelectedBookingStatus("cancelled"));
+    releaseBookingBtn.addEventListener("click", () => {
+      if (confirm("Release this cottage and mark the booking completed?")) {
+        changeSelectedBookingStatus("completed");
+      }
+    });
+    closeBookingModal.addEventListener("click", closeDetails);
+    bookingModal.addEventListener("click", (e) => {
+      if (e.target === bookingModal) closeDetails();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeDetails();
+    });
+
+    (async function initBookingMonitor() {
+      try {
+        adminBookings = await MaslogDB.listAdminBookings();
+        updateBookingStats(adminBookings);
+        renderBookings();
+      } catch (err) {
+        bookingBody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#b42318;padding:1.2rem;">${err.message || "Failed to load online bookings"}</td></tr>`;
+      }
+    })();
+  </script>
+</body>
+</html>
+
+

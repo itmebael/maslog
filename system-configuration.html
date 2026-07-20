@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>System Configuration — Maslog Cold Spring</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="admin.css?v=6" />
+  <link rel="stylesheet" href="admin-extra.css?v=5" />
+  <script>try{const s=JSON.parse(localStorage.getItem("maslog_session_v2")||"null");localStorage.setItem("portal",s?.role==="staff"?"staff":"admin");}catch{localStorage.setItem("portal","admin");}</script>
+  <script src="portal-nav.js" defer></script>
+  <script src="admin-logout.js" defer></script>
+  <style>
+    .list-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .cottage-photo {
+      width: 116px;
+      display: grid;
+      gap: 0.4rem;
+    }
+
+    .cottage-photo-preview {
+      width: 96px;
+      aspect-ratio: 4 / 3;
+      border-radius: 8px;
+      border: 1px solid #dde3ea;
+      background: #f7faf8;
+      object-fit: cover;
+      display: block;
+    }
+
+    .cottage-photo-empty {
+      width: 96px;
+      aspect-ratio: 4 / 3;
+      border-radius: 8px;
+      border: 1px dashed #b9c9c0;
+      color: #7f8c8d;
+      background: #f7faf8;
+      display: grid;
+      place-items: center;
+      font-size: 0.72rem;
+      font-weight: 650;
+    }
+
+    .cottage-photo-actions {
+      display: flex;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+    }
+
+    .cottage-photo-actions button {
+      padding: 0.3rem 0.45rem;
+      border-radius: 7px;
+      font-size: 0.72rem;
+    }
+
+    .cottage-photo input[type="file"] {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M17 8C8 10 5.9 16.17 3.82 21.67L5.71 22l1-2.3A24.09 24.09 0 0 0 12 17c5-3 7-8 7-11a3 3 0 0 0-2-2.82M9.09 17c2.46-2.71 4.91-4.94 8.54-6.68C16.91 14.87 13.54 16.62 9.09 17m8.4-11.57A1 1 0 0 1 19 6c0 1.91-1.02 5.07-3.16 7.72C12.91 10.35 10.18 8.29 6.39 7.41c1.56-.57 3.28-.91 5.11-.91 2.2 0 4.34.46 6-.1Z"/></svg>
+        </div>
+        <div>
+          <h1>Maslog Cold Spring</h1>
+          <p>Admin Portal</p>
+        </div>
+      </div>
+      <p class="menu-label">Main Menu</p>
+      <nav class="nav">
+        <a href="admin-dashboard.html"><svg viewBox="0 0 24 24"><path d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M12 2v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="M2 12h2"/><path d="m4.93 19.07 1.41-1.41"/><path d="M19.07 4.93l-1.41 1.41"/><path d="M20 12h2"/><path d="M12 20v2"/><path d="m16 16 3 3"/><path d="M12 13v5"/></svg>Dashboard</a>
+        <a href="staff-account.html"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Staff Account</a>
+        <a href="user-management.html"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>User Management</a>
+        <a href="sales-monitoring.html"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>Sales Monitoring</a>
+        <a href="revenue-report.html"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>Revenue Report</a>
+        <a href="online-booking.html"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>Online Booking</a>
+        <a href="walk-in-transaction.html"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>Walk-In Transaction</a>
+        <a href="transaction-history.html"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Transaction History</a>
+        <a class="active" href="system-configuration.html"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v2"/><path d="M12 21v2"/><path d="m4.22 4.22 1.42 1.42"/><path d="m18.36 18.36 1.42 1.42"/><path d="M1 12h2"/><path d="M21 12h2"/><path d="m4.22 19.78 1.42-1.42"/><path d="m18.36 5.64 1.42-1.42"/></svg>System Configuration</a>
+        </nav>
+      <a class="btn-logout" href="index.html"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Log-Out</a>
+    </aside>
+
+    <main class="main">
+      <header class="hero">
+        <div class="page-title">
+          <h2>System Configuration</h2>
+          <p>Manage pricing, entrance fees, and other system settings.</p>
+        </div>
+        <div class="top-actions">
+          <form class="search-group" onsubmit="return false;">
+            <div class="field">
+              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input type="search" placeholder="Search settings..." />
+            </div>
+            <button class="btn-search" type="submit">SEARCH</button>
+          </form>
+          <div class="profile">
+            <div class="avatar-fallback">AB</div>
+            <div><strong>Arianne B.</strong><span>Administrator</span></div>
+          </div>
+        </div>
+      </header>
+
+      <div class="content">
+        <section class="card">
+          <div class="config-tabs" role="tablist">
+            <button type="button" class="active" data-tab="general" role="tab">General Settings</button>
+            <button type="button" data-tab="entrance" role="tab">Entrance Fees</button>
+            <button type="button" data-tab="cottage" role="tab">Property Rates</button>
+          </div>
+        </section>
+
+        <div id="panel-general" class="config-panel active">
+          <div class="settings-grid">
+            <article class="card full">
+              <h3 style="font-size:1.05rem;margin-bottom:1rem;">Resort Information</h3>
+              <div style="display:grid;grid-template-columns:1fr 180px;gap:1.25rem;align-items:start;">
+                <div class="form-grid">
+                  <div class="form-field">
+                    <label for="resortName">Resort Name</label>
+                    <input id="resortName" type="text" value="Maslog Cold Spring" />
+                  </div>
+                  <div class="form-field">
+                    <label for="contact">Contact Number</label>
+                    <input id="contact" type="text" value="+63 917 555 0100" />
+                  </div>
+                  <div class="form-field span-2">
+                    <label for="address">Address</label>
+                    <input id="address" type="text" value="Maslog, Claveria, Cagayan Valley" />
+                  </div>
+                  <div class="form-field span-2">
+                    <label for="email">Email Address</label>
+                    <input id="email" type="email" value="admin@maslogcoldspring.com" />
+                  </div>
+                </div>
+                <div class="logo-box">
+                  <img src="backg.png" alt="Maslog logo preview" />
+                  <p>MASLOG LOGO</p>
+                </div>
+              </div>
+            </article>
+
+            <article class="card">
+              <h3 style="font-size:1.05rem;margin-bottom:1rem;">Receipt Settings</h3>
+              <div class="form-grid" style="grid-template-columns:1fr;">
+                <div class="form-field">
+                  <label for="header">Receipt Header</label>
+                  <textarea id="header">Maslog Cold Spring&#10;Thank you for visiting!</textarea>
+                </div>
+                <div class="form-field">
+                  <label for="footer">Footer Message</label>
+                  <textarea id="footer">Preserve Nature. Manage Better.</textarea>
+                </div>
+              </div>
+              <div style="margin-top:0.75rem;">
+                <div class="toggle-row">
+                  <span>Auto-generate Receipt No.</span>
+                  <label class="switch"><input type="checkbox" checked /><span></span></label>
+                </div>
+                <div class="toggle-row">
+                  <span>QR Code Enabled</span>
+                  <label class="switch"><input type="checkbox" checked /><span></span></label>
+                </div>
+                <div class="toggle-row">
+                  <span>Show Logo on Receipt</span>
+                  <label class="switch"><input type="checkbox" checked /><span></span></label>
+                </div>
+              </div>
+            </article>
+
+            <article class="card">
+              <h3 style="font-size:1.05rem;margin-bottom:1rem;">Pricing Defaults</h3>
+              <div class="form-grid" style="grid-template-columns:1fr;">
+                <div class="form-field">
+                  <label for="currency">Default Currency</label>
+                  <select id="currency">
+                    <option selected>Philippine Peso (₱)</option>
+                    <option>US Dollar ($)</option>
+                  </select>
+                </div>
+                <div class="form-field">
+                  <label for="vat">VAT / Tax Rate (%)</label>
+                  <input id="vat" type="number" value="12" />
+                </div>
+                <div class="form-field">
+                  <label for="senior">Senior Citizen Discount (%)</label>
+                  <input id="senior" type="number" value="20" />
+                </div>
+                <div class="form-field">
+                  <label for="pwd">PWD Discount (%)</label>
+                  <input id="pwd" type="number" value="20" />
+                </div>
+              </div>
+            </article>
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-top:1rem;">
+            <button type="button" class="btn btn-primary">Save Changes</button>
+          </div>
+        </div>
+
+        <div id="panel-entrance" class="config-panel">
+          <section class="card">
+            <div class="list-head" style="margin-bottom:0.35rem;">
+              <div>
+                <h3 style="font-size:1.05rem;">Entrance Fees</h3>
+                <p style="font-size:0.82rem;color:var(--text-muted);margin-top:0.25rem;">Admin base rates for walk-in transactions. Separate from Staff Fees Edit.</p>
+              </div>
+              <button type="button" class="btn btn-primary" id="btnSaveEntrance">Save Entrance Fees</button>
+            </div>
+            <div class="form-grid" style="margin-top:1rem;">
+              <div class="form-field">
+                <label for="feeAdult">Adult Entrance (₱)</label>
+                <input id="feeAdult" type="number" min="0" step="1" />
+              </div>
+              <div class="form-field">
+                <label for="feeChild">Child Entrance (₱)</label>
+                <input id="feeChild" type="number" min="0" step="1" />
+              </div>
+              <div class="form-field">
+                <label for="feeSenior">Senior / PWD (₱)</label>
+                <input id="feeSenior" type="number" min="0" step="1" />
+              </div>
+              <div class="form-field">
+                <label for="feeInfant">Infant 0–3 (₱)</label>
+                <input id="feeInfant" type="number" min="0" step="1" />
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div id="panel-cottage" class="config-panel">
+          <section class="card">
+            <div class="list-head" style="margin-bottom:0.85rem;">
+              <div>
+                <h3 style="font-size:1.05rem;">Property Rates</h3>
+                <p style="font-size:0.82rem;color:var(--text-muted);margin-top:0.25rem;">Admin property pricing, walk-in availability, and photos. Saved rows sync to Staff Fees Edit.</p>
+              </div>
+              <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                <button type="button" class="btn btn-ghost" id="btnAddCottage">+ Add Property</button>
+                <button type="button" class="btn btn-primary" id="btnSaveCottage">Save Property Rates</button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Photo</th>
+                    <th>Type</th>
+                    <th>Property</th>
+                    <th>Capacity</th>
+                    <th>Features</th>
+                    <th>Rate (₱)</th>
+                    <th>Status</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="cottageBody"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status" style="position:fixed;bottom:1.5rem;right:1.5rem;background:var(--green-dark);color:#fff;padding:0.7rem 1.1rem;border-radius:10px;font-size:0.88rem;font-weight:600;z-index:10000;opacity:0;transform:translateY(10px);transition:0.2s;pointer-events:none;">Saved</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="maslog-db.js"></script>
+  <script>
+    let fees = {
+      entrance: { adult: 0, child: 0, senior: 0, infant: 0 },
+      cottages: [],
+    };
+
+    async function loadFeesFromDb() {
+      fees.entrance = await MaslogDB.getAdminEntranceFees();
+      fees.cottages = await MaslogDB.listAdminCottages();
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById("toast");
+      t.textContent = msg;
+      t.style.opacity = "1";
+      t.style.transform = "translateY(0)";
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => {
+        t.style.opacity = "0";
+        t.style.transform = "translateY(10px)";
+      }, 2000);
+    }
+
+    function activateTab(tab) {
+      document.querySelectorAll(".config-tabs button").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
+      document.querySelectorAll(".config-panel").forEach((p) => p.classList.toggle("active", p.id === "panel-" + tab));
+    }
+
+    document.querySelectorAll(".config-tabs button").forEach((btn) => {
+      btn.addEventListener("click", () => activateTab(btn.dataset.tab));
+    });
+
+    const hash = (location.hash || "").replace("#", "");
+    if (hash === "entrance" || hash === "cottage") activateTab(hash);
+
+    function loadEntranceForm() {
+      const e = fees.entrance;
+      document.getElementById("feeAdult").value = e.adult;
+      document.getElementById("feeChild").value = e.child;
+      document.getElementById("feeSenior").value = e.senior;
+      document.getElementById("feeInfant").value = e.infant;
+    }
+
+    function renderCottages() {
+      const body = document.getElementById("cottageBody");
+      body.innerHTML = fees.cottages
+        .map(
+          (c) => `
+        <tr data-id="${c.id}">
+          <td>
+            <div class="cottage-photo">
+              ${cottagePhotoSrc(c) ? `<img class="cottage-photo-preview" src="${escapeAttr(cottagePhotoSrc(c))}" alt="${escapeAttr(c.name)} photo" />` : `<div class="cottage-photo-empty">No photo</div>`}
+              <input type="hidden" class="c-photo-path" value="${escapeAttr(c.photoPath || "")}" />
+              <input type="file" class="c-photo-file" accept="image/*" />
+              <div class="cottage-photo-actions">
+                <button type="button" class="btn btn-ghost c-photo-upload">Upload</button>
+                <button type="button" class="btn btn-ghost c-photo-remove">Remove</button>
+              </div>
+            </div>
+          </td>
+          <td>
+            <select class="c-type" style="border:1px solid #dde3ea;border-radius:8px;padding:0.4rem 0.55rem;font:inherit;">
+              <option value="cottage" ${(c.type || "cottage") === "cottage" ? "selected" : ""}>Cottage</option>
+              <option value="chair" ${c.type === "chair" ? "selected" : ""}>Chair</option>
+              <option value="tent" ${c.type === "tent" ? "selected" : ""}>Tent</option>
+            </select>
+          </td>
+          <td><input type="text" class="c-name" value="${escapeAttr(c.name)}" style="width:100%;min-width:110px;border:1px solid #dde3ea;border-radius:8px;padding:0.4rem 0.55rem;font:inherit;" /></td>
+          <td><input type="number" class="c-cap" min="1" value="${c.capacity}" style="width:72px;border:1px solid #dde3ea;border-radius:8px;padding:0.4rem 0.55rem;font:inherit;" /></td>
+          <td><input type="text" class="c-feat" value="${escapeAttr(c.features || "")}" style="width:100%;min-width:140px;border:1px solid #dde3ea;border-radius:8px;padding:0.4rem 0.55rem;font:inherit;" /></td>
+          <td><input type="number" class="c-rate" min="0" value="${c.rate}" style="width:100px;border:1px solid #dde3ea;border-radius:8px;padding:0.4rem 0.55rem;font:inherit;" /></td>
+          <td>
+            <select class="c-avail" style="border:1px solid #dde3ea;border-radius:8px;padding:0.4rem 0.55rem;font:inherit;">
+              <option value="true" ${c.available !== false ? "selected" : ""}>Available</option>
+              <option value="false" ${c.available === false ? "selected" : ""}>Busy</option>
+            </select>
+          </td>
+          <td><button type="button" class="btn btn-ghost c-del" style="padding:0.35rem 0.65rem;font-size:0.78rem;">Delete</button></td>
+        </tr>`
+        )
+        .join("");
+
+      body.querySelectorAll(".c-del").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const id = btn.closest("tr").dataset.id;
+          if (!confirm("Remove this property?")) return;
+          try {
+            await MaslogDB.deleteAdminCottage(id);
+            fees.cottages = fees.cottages.filter((c) => c.id !== id);
+            renderCottages();
+            showToast("Property removed");
+          } catch (err) {
+            showToast("Delete failed: " + err.message);
+          }
+        });
+      });
+
+      body.querySelectorAll(".c-photo-upload").forEach((btn) => {
+        btn.addEventListener("click", () => btn.closest(".cottage-photo").querySelector(".c-photo-file").click());
+      });
+
+      body.querySelectorAll(".c-photo-file").forEach((input) => {
+        input.addEventListener("change", () => handleCottagePhoto(input));
+      });
+
+      body.querySelectorAll(".c-photo-remove").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const box = btn.closest(".cottage-photo");
+          box.querySelector(".c-photo-path").value = "";
+          box.querySelector(".cottage-photo-preview")?.replaceWith(emptyPhotoNode());
+        });
+      });
+    }
+
+    function emptyPhotoNode() {
+      const div = document.createElement("div");
+      div.className = "cottage-photo-empty";
+      div.textContent = "No photo";
+      return div;
+    }
+
+    function cottagePhotoSrc(cottage) {
+      if (cottage.photo) return cottage.photo;
+      return resolveAdminPhoto(cottage.photoPath);
+    }
+
+    function resolveAdminPhoto(ref) {
+      if (!ref || !String(ref).startsWith("admin-cottage-photo:")) return ref || "";
+      return localStorage.getItem(ref) || "";
+    }
+
+    function storeAdminPhoto(rowId, dataUrl) {
+      const key = `admin-cottage-photo:${rowId}:${Date.now().toString(36)}`;
+      localStorage.setItem(key, dataUrl);
+      return key;
+    }
+
+    function handleCottagePhoto(input) {
+      const file = input.files?.[0];
+      if (!file) return;
+      const tr = input.closest("tr");
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = String(reader.result || "");
+        const ref = storeAdminPhoto(tr.dataset.id || Date.now().toString(36), dataUrl);
+        const box = input.closest(".cottage-photo");
+        box.querySelector(".c-photo-path").value = ref;
+        const img = document.createElement("img");
+        img.className = "cottage-photo-preview";
+        img.src = dataUrl;
+        img.alt = "Cottage photo";
+        const current = box.querySelector(".cottage-photo-preview, .cottage-photo-empty");
+        current.replaceWith(img);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function escapeAttr(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;");
+    }
+
+    function collectCottagesFromDom() {
+      return [...document.querySelectorAll("#cottageBody tr")].map((tr) => ({
+        id: tr.dataset.id,
+        type: tr.querySelector(".c-type").value || "cottage",
+        name: tr.querySelector(".c-name").value.trim() || "Property",
+        capacity: Number(tr.querySelector(".c-cap").value) || 1,
+        features: tr.querySelector(".c-feat").value.trim(),
+        rate: Number(tr.querySelector(".c-rate").value) || 0,
+        photoPath: tr.querySelector(".c-photo-path")?.value || "",
+        photo: resolveAdminPhoto(tr.querySelector(".c-photo-path")?.value || ""),
+        available: tr.querySelector(".c-avail").value !== "false",
+      }));
+    }
+
+    document.getElementById("btnSaveEntrance").addEventListener("click", async () => {
+      fees.entrance = {
+        adult: Number(document.getElementById("feeAdult").value) || 0,
+        child: Number(document.getElementById("feeChild").value) || 0,
+        senior: Number(document.getElementById("feeSenior").value) || 0,
+        infant: Number(document.getElementById("feeInfant").value) || 0,
+      };
+      try {
+        await MaslogDB.saveAdminEntranceFees(fees.entrance);
+        showToast("Entrance fees saved (Admin)");
+      } catch (err) {
+        showToast("Save failed: " + err.message);
+      }
+    });
+
+    document.getElementById("btnAddCottage").addEventListener("click", () => {
+      fees.cottages = collectCottagesFromDom();
+      fees.cottages.push({
+        id: "c" + Date.now().toString(36),
+        type: "cottage",
+        name: "New Property",
+        capacity: 6,
+        features: "",
+        rate: 800,
+        photoPath: "",
+        photo: "",
+        available: true,
+      });
+      renderCottages();
+    });
+
+    document.getElementById("btnSaveCottage").addEventListener("click", async () => {
+      const list = collectCottagesFromDom();
+      try {
+        await MaslogDB.saveAdminCottages(list);
+        fees.cottages = await MaslogDB.listAdminCottages();
+        renderCottages();
+        showToast("Property rates saved and linked to Staff Fees");
+      } catch (err) {
+        showToast("Save failed: " + err.message);
+      }
+    });
+
+    (async () => {
+      try {
+        await loadFeesFromDb();
+        loadEntranceForm();
+        renderCottages();
+      } catch (err) {
+        showToast("Failed to load fees: " + err.message);
+      }
+    })();
+  </script>
+</body>
+</html>
