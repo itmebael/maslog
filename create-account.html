@@ -19,6 +19,7 @@
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    [hidden] { display: none !important; }
     html, body { min-height: 100%; }
 
     body {
@@ -423,6 +424,9 @@
               <button type="button" class="btn btn-soft" id="captureBtn" disabled>
                 Capture
               </button>
+              <button type="button" class="btn btn-soft" id="recaptureBtn" hidden>
+                Recapture
+              </button>
             </div>
             <canvas id="camCanvas" hidden></canvas>
           </div>
@@ -437,8 +441,11 @@
               <label class="btn btn-soft" style="cursor:pointer;">
                 <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                 Upload ID
-                <input type="file" id="idFile" accept="image/*" hidden />
+                <input type="file" id="idFile" accept="image/*" capture="environment" hidden />
               </label>
+              <button type="button" class="btn btn-soft" id="recaptureIdBtn" hidden>
+                Recapture
+              </button>
             </div>
           </div>
         </div>
@@ -554,59 +561,83 @@
       });
     }
 
-    // Camera
-    document.getElementById("startCam").addEventListener("click", async () => {
+    const startCamBtn = document.getElementById("startCam");
+    const captureBtn = document.getElementById("captureBtn");
+    const recaptureBtn = document.getElementById("recaptureBtn");
+    const camVideo = document.getElementById("camVideo");
+    const selfieImg = document.getElementById("selfieImg");
+    const camPh = document.getElementById("camPh");
+    const camCanvas = document.getElementById("camCanvas");
+    const idFile = document.getElementById("idFile");
+    const idImg = document.getElementById("idImg");
+    const idPh = document.getElementById("idPh");
+    const recaptureIdBtn = document.getElementById("recaptureIdBtn");
+
+    function stopCamera() {
+      if (!stream) return;
+      stream.getTracks().forEach((t) => t.stop());
+      stream = null;
+    }
+
+    async function openCamera() {
       try {
-        if (stream) stream.getTracks().forEach((t) => t.stop());
-        stream = await navigator.mediaDevices.getUserMedia({
+        stopCamera();
+        const nextStream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "user", width: { ideal: 720 }, height: { ideal: 960 } },
           audio: false,
         });
-        const video = document.getElementById("camVideo");
-        video.srcObject = stream;
-        video.hidden = false;
-        document.getElementById("selfieImg").hidden = true;
-        document.getElementById("camPh").hidden = true;
-        document.getElementById("captureBtn").disabled = false;
+        stream = nextStream;
+        selfieData = "";
+        camVideo.srcObject = stream;
+        camVideo.hidden = false;
+        selfieImg.removeAttribute("src");
+        selfieImg.hidden = true;
+        camPh.hidden = true;
+        captureBtn.disabled = false;
+        recaptureBtn.hidden = true;
       } catch (err) {
         showToast("Camera access denied or unavailable");
       }
-    });
+    }
 
-    document.getElementById("captureBtn").addEventListener("click", async () => {
-      const video = document.getElementById("camVideo");
-      const canvas = document.getElementById("camCanvas");
-      if (!video.srcObject) return;
-      canvas.width = video.videoWidth || 640;
-      canvas.height = video.videoHeight || 480;
-      canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
-      selfieData = await compressImageDataUrl(canvas.toDataURL("image/jpeg", 0.85));
-      const img = document.getElementById("selfieImg");
-      img.src = selfieData;
-      img.hidden = false;
-      video.hidden = true;
-      if (stream) {
-        stream.getTracks().forEach((t) => t.stop());
-        stream = null;
-      }
+    // Camera
+    startCamBtn.addEventListener("click", openCamera);
+    recaptureBtn.addEventListener("click", openCamera);
+
+    captureBtn.addEventListener("click", async () => {
+      if (!camVideo.srcObject) return;
+      camCanvas.width = camVideo.videoWidth || 640;
+      camCanvas.height = camVideo.videoHeight || 480;
+      camCanvas.getContext("2d").drawImage(camVideo, 0, 0, camCanvas.width, camCanvas.height);
+      selfieData = await compressImageDataUrl(camCanvas.toDataURL("image/jpeg", 0.85));
+      selfieImg.src = selfieData;
+      selfieImg.hidden = false;
+      camVideo.hidden = true;
+      captureBtn.disabled = true;
+      recaptureBtn.hidden = false;
+      stopCamera();
       showToast("Selfie captured");
     });
 
     // Valid ID
-    document.getElementById("idFile").addEventListener("change", (e) => {
+    recaptureIdBtn.addEventListener("click", () => idFile.click());
+
+    idFile.addEventListener("change", (e) => {
       const file = e.target.files?.[0];
       if (!file) return;
       if (file.size > 1.5 * 1024 * 1024) {
         showToast("ID image too large (max 1.5MB)");
+        idFile.value = "";
         return;
       }
       const reader = new FileReader();
       reader.onload = async () => {
         idData = await compressImageDataUrl(reader.result);
-        const img = document.getElementById("idImg");
-        img.src = idData;
-        img.hidden = false;
-        document.getElementById("idPh").hidden = true;
+        idImg.src = idData;
+        idImg.hidden = false;
+        idPh.hidden = true;
+        recaptureIdBtn.hidden = false;
+        idFile.value = "";
       };
       reader.readAsDataURL(file);
     });
@@ -670,7 +701,7 @@
     });
 
     window.addEventListener("beforeunload", () => {
-      if (stream) stream.getTracks().forEach((t) => t.stop());
+      stopCamera();
     });
   </script>
 </body>
