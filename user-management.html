@@ -524,11 +524,12 @@
       const u = users.find((x) => String(x.id) === String(selectedId));
       if (!u) return null;
       try {
-        await MaslogDB.updateClientVerification(u.id, u.userId, patch);
+        const saveResult = await MaslogDB.updateClientVerification(u.id, u.userId, patch);
         if (patch.cameraVerified != null) u.cameraVerified = patch.cameraVerified;
         if (patch.idVerified != null) u.idVerified = patch.idVerified;
         if (patch.gmailStaffVerified != null) u.gmailStaffVerified = patch.gmailStaffVerified;
         if (patch.reviewStatus) u.status = patch.reviewStatus;
+        u.emailNotification = saveResult?.emailNotification || null;
         updateStats();
         selectUser(selectedId);
         return u;
@@ -557,7 +558,13 @@
         return;
       }
       const result = await patchSelected({ reviewStatus: "approved" });
-      if (result) showToast("Account approved by " + reviewer);
+      if (result?.emailNotification?.sent) {
+        showToast("Account approved and email sent");
+      } else if (result?.emailNotification?.error) {
+        showToast("Approved, but email not sent: " + result.emailNotification.error);
+      } else if (result) {
+        showToast("Account approved by " + reviewer);
+      }
     });
 
     document.getElementById("btnReject").addEventListener("click", async () => {
@@ -565,7 +572,13 @@
       if (!u || u.status !== "pending") return;
       if (!confirm("Reject this registration?")) return;
       const result = await patchSelected({ reviewStatus: "rejected" });
-      if (result) showToast("Registration rejected");
+      if (result?.emailNotification?.sent) {
+        showToast("Registration rejected and email sent");
+      } else if (result?.emailNotification?.error) {
+        showToast("Rejected, but email not sent: " + result.emailNotification.error);
+      } else if (result) {
+        showToast("Registration rejected");
+      }
     });
 
     document.getElementById("userSearch").addEventListener("input", renderList);

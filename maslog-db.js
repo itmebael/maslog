@@ -471,6 +471,23 @@
     }));
   };
 
+  db.sendAccountReviewEmail = async function (profileId) {
+    try {
+      const response = await fetch("/api/account-review-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ profileId }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload.error || "Account status email was not sent");
+      }
+      return payload;
+    } catch (err) {
+      return { sent: false, error: err.message || "Account status email was not sent" };
+    }
+  };
+
   db.updateClientVerification = async function (profileId, userId, patch) {
     const updates = {};
     if (patch.cameraVerified != null) updates.camera_verified = patch.cameraVerified;
@@ -491,6 +508,12 @@
     } else if (patch.reviewStatus === "rejected") {
       await sb().from("users").update({ status: "rejected" }).eq("id", userId);
     }
+
+    if (["approved", "rejected"].includes(patch.reviewStatus)) {
+      return { emailNotification: await db.sendAccountReviewEmail(profileId) };
+    }
+
+    return { emailNotification: null };
   };
 
   db.getCurrentClient = async function () {
