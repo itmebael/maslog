@@ -277,6 +277,7 @@
     const bookingBody = document.getElementById("bookingBody");
     const statusFilter = document.getElementById("bookStatus");
     const bookingSearch = document.getElementById("searchBooking");
+    const headerSearch = document.querySelector(".top-actions .search-group input[type='search']");
     const bookingModal = document.getElementById("bookingModal");
     const bookingDetailBody = document.getElementById("bookingDetailBody");
     const closeBookingModal = document.getElementById("closeBookingModal");
@@ -298,6 +299,40 @@
         day: "numeric",
         year: "numeric",
       });
+    }
+
+    function dateKey(value) {
+      if (!value) return "";
+      const raw = String(value);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return raw.slice(0, 10);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+
+    function parseLocalDateKey(key) {
+      if (!key) return null;
+      const [y, m, d] = String(key).slice(0, 10).split("-").map(Number);
+      if (!y || !m || !d) return null;
+      return new Date(y, m - 1, d);
+    }
+
+    function getActiveRange() {
+      const root = document.querySelector("[data-date-range]");
+      const from = parseLocalDateKey(root?.dataset.from);
+      const to = parseLocalDateKey(root?.dataset.to);
+      if (to) to.setHours(23, 59, 59, 999);
+      return { from, to };
+    }
+
+    function isInActiveRange(booking) {
+      const { from, to } = getActiveRange();
+      if (!from || !to) return true;
+      const d = parseLocalDateKey(dateKey(booking.date));
+      return !!d && d >= from && d <= to;
     }
 
     function statusClass(status) {
@@ -399,13 +434,13 @@
     }
 
     function renderBookings() {
-      const q = bookingSearch.value.trim().toLowerCase();
+      const q = String(bookingSearch.value || headerSearch?.value || "").trim().toLowerCase();
       const wantedStatus = statusFilter.value.toLowerCase();
       const filtered = adminBookings.filter((b) => {
         const text = [b.code, b.customer, b.contact, b.propertyName].join(" ").toLowerCase();
         const matchesText = !q || text.includes(q);
         const matchesStatus = wantedStatus === "all status" || String(b.status).toLowerCase() === wantedStatus;
-        return matchesText && matchesStatus;
+        return matchesText && matchesStatus && isInActiveRange(b);
       });
 
       if (!filtered.length) {
@@ -414,7 +449,7 @@
       }
 
       bookingBody.innerHTML = filtered.map((b) => `
-        <tr data-code="${escapeHtml(b.code || "")}" data-date="${String(b.date || "").slice(0, 10)}" tabindex="0">
+        <tr data-code="${escapeHtml(b.code || "")}" data-date="${dateKey(b.date)}" tabindex="0">
           <td class="link-id">${escapeHtml(b.code || "")}</td>
           <td>${escapeHtml(b.customer || "")}</td>
           <td>${escapeHtml(b.contact || "")}</td>
@@ -437,8 +472,16 @@
       });
     }
 
-    bookingSearch.addEventListener("input", renderBookings);
+    bookingSearch.addEventListener("input", () => {
+      if (headerSearch) headerSearch.value = bookingSearch.value;
+      renderBookings();
+    });
+    headerSearch?.addEventListener("input", () => {
+      bookingSearch.value = headerSearch.value;
+      renderBookings();
+    });
     statusFilter.addEventListener("change", renderBookings);
+    document.querySelector("[data-date-range]")?.addEventListener("daterangechange", renderBookings);
     acceptBookingBtn.addEventListener("click", () => changeSelectedBookingStatus("confirmed"));
     rejectBookingBtn.addEventListener("click", () => changeSelectedBookingStatus("cancelled"));
     releaseBookingBtn.addEventListener("click", () => {

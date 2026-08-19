@@ -91,6 +91,10 @@
       opacity: 1;
       transform: translateY(0);
     }
+    .actions button.archive:hover {
+      color: var(--orange);
+      border-color: var(--orange);
+    }
   </style>
 </head>
 <body>
@@ -330,7 +334,7 @@
             <td><span class="status-dot ${statusCls}">${escapeHtml(s.status)}</span></td>
             <td><div class="actions">
               <button class="edit" type="button" data-id="${s.id}" aria-label="Edit"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
-              <button class="delete" type="button" data-id="${s.id}" aria-label="Delete"><svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>
+              <button class="archive" type="button" data-id="${s.id}" aria-label="Archive"><svg viewBox="0 0 24 24"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg></button>
             </div></td>
           </tr>`;
       }).join("");
@@ -374,23 +378,23 @@
           if (item) openModal(item);
         });
       });
-      document.querySelectorAll(".delete").forEach((btn) => {
+      document.querySelectorAll(".archive").forEach((btn) => {
         btn.addEventListener("click", () => {
           const item = staffList.find((s) => s.id === btn.dataset.id);
           if (!item) return;
-          deleteStaff(item);
+          archiveStaff(item);
         });
       });
     }
 
-    async function deleteStaff(item) {
-      if (!confirm(`Delete ${item.name}?`)) return;
+    async function archiveStaff(item) {
+      if (!confirm(`Archive ${item.name}? This keeps the staff member's sales records and only makes the account inactive.`)) return;
       try {
-        await MaslogDB.deleteStaffAccount(item.id);
-        showToast("Staff account deleted");
+        await MaslogDB.archiveStaffAccount(item.id);
+        showToast("Staff account archived");
         await reloadStaffList();
       } catch (err) {
-        showToast(err.message || "Failed to delete staff account");
+        showToast(err.message || "Failed to archive staff account");
       }
     }
 
@@ -448,6 +452,7 @@
     });
 
     const search = document.getElementById("staffSearch");
+    const headerSearch = document.querySelector(".top-actions .search-group input[type='search']");
     const role = document.getElementById("roleFilter");
 
     function filterRows() {
@@ -461,6 +466,14 @@
     }
 
     search.addEventListener("input", filterRows);
+    headerSearch?.addEventListener("input", () => {
+      search.value = headerSearch.value;
+      filterRows();
+    });
+    document.querySelector(".top-actions .search-group")?.addEventListener("submit", () => {
+      search.value = headerSearch?.value || "";
+      filterRows();
+    });
     role.addEventListener("change", filterRows);
 
     (async function init() {

@@ -471,6 +471,7 @@
     }
 
     .dot.green { background: var(--green-dark); }
+    .dot.blue { background: var(--blue); }
     .dot.yellow { background: var(--yellow); }
 
     .occupancy-wrap {
@@ -794,9 +795,6 @@
           <svg viewBox="0 0 24 24"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           Online Booking Setup
         </a>
-        <a href="user-management.html"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          User Management
-        </a>
       </nav>
       <a class="btn-logout" href="index.html">
         <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -914,6 +912,7 @@
             </div>
             <div class="legend-row">
               <span><i class="dot green"></i> Total Revenue</span>
+              <span><i class="dot blue"></i> Entrance Fees</span>
               <span><i class="dot yellow"></i> Property Rentals</span>
             </div>
             <div class="chart-wrap">
@@ -999,6 +998,7 @@
   <script>
     const weeklyLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
     const weeklyRevenue = [0, 0, 0, 0, 0, 0, 0];
+    const weeklyEntrance = [0, 0, 0, 0, 0, 0, 0];
     const weeklyProperties = [0, 0, 0, 0, 0, 0, 0];
     const monthFormatter = new Intl.DateTimeFormat("en-US", { month: "short" });
     const monthlyLabels = Array.from({ length: 6 }, (_, i) => {
@@ -1006,6 +1006,7 @@
       return monthFormatter.format(new Date(now.getFullYear(), now.getMonth() - 5 + i, 1));
     });
     const monthlyRevenue = [0, 0, 0, 0, 0, 0];
+    const monthlyEntrance = [0, 0, 0, 0, 0, 0];
     const monthlyProperties = [0, 0, 0, 0, 0, 0];
 
     const revenueChart = new Chart(document.getElementById("revenueChart"), {
@@ -1023,6 +1024,17 @@
             borderWidth: 2.5,
             pointRadius: 4,
             pointBackgroundColor: "#27ae60",
+          },
+          {
+            label: "Entrance Fees",
+            data: weeklyEntrance,
+            borderColor: "#3498db",
+            backgroundColor: "transparent",
+            fill: false,
+            tension: 0.4,
+            borderWidth: 2.5,
+            pointRadius: 4,
+            pointBackgroundColor: "#3498db",
           },
           {
             label: "Property Rentals",
@@ -1203,6 +1215,7 @@
       const activePeriod = document.querySelector(".toggle button.active")?.dataset.period || "weekly";
       const labels = activePeriod === "weekly" ? weeklyLabels : monthlyLabels;
       const revenue = labels.map(() => 0);
+      const entrance = labels.map(() => 0);
       const property = labels.map(() => 0);
       const today = new Date();
 
@@ -1217,12 +1230,14 @@
         }
         if (idx < 0 || idx >= labels.length) return;
         revenue[idx] += Number(t.total || 0);
+        entrance[idx] += Number(t.entranceTotal || 0);
         property[idx] += Number(t.propertyTotal || 0);
       });
 
       revenueChart.data.labels = labels;
       revenueChart.data.datasets[0].data = revenue;
-      revenueChart.data.datasets[1].data = property;
+      revenueChart.data.datasets[1].data = entrance;
+      revenueChart.data.datasets[2].data = property;
       revenueChart.update();
     }
 
@@ -1260,9 +1275,13 @@
 
     async function loadDashboardTransactions() {
       try {
-        dashboardTransactions = await MaslogDB.listAdminTransactions();
+        dashboardTransactions = MaslogDB.listStaffDailyTransactions
+          ? await MaslogDB.listStaffDailyTransactions()
+          : [];
         try {
-          dashboardQrVerifications = MaslogDB.listQrVerifications ? await MaslogDB.listQrVerifications() : [];
+          dashboardQrVerifications = MaslogDB.listStaffDailyQrVerifications
+            ? await MaslogDB.listStaffDailyQrVerifications()
+            : [];
         } catch {
           dashboardQrVerifications = [];
         }

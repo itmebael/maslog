@@ -380,10 +380,10 @@
   <script src="supabase-config.js"></script>
   <script src="maslog-db.js"></script>
   <script>
-    const session = MaslogDB.requireSession(["admin", "staff"]);
+    const session = MaslogDB.requireSession(["admin"]);
     if (!session) location.href = "index.html";
     const portal = session?.portal || localStorage.getItem("portal") || "admin";
-    const reviewerRole = portal === "staff" || session?.role === "staff" ? "Staff" : "Admin";
+    const reviewerRole = "Admin";
     const reviewer = `${session?.fullName || (reviewerRole === "Staff" ? "Staff" : "Admin")} (${reviewerRole})`;
 
     let users = [];

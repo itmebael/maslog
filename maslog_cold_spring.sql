@@ -98,6 +98,9 @@ CREATE TABLE IF NOT EXISTS users (
   role_id         SMALLINT NOT NULL REFERENCES roles(id),
   email           VARCHAR(150) NOT NULL UNIQUE,
   password_hash   VARCHAR(255) NOT NULL,
+  first_name      VARCHAR(80)  NULL,
+  middle_initial  VARCHAR(5)   NULL,
+  last_name       VARCHAR(80)  NULL,
   full_name       VARCHAR(150) NOT NULL,
   phone           VARCHAR(30)  NULL,
   status          user_status NOT NULL DEFAULT 'pending',
@@ -105,6 +108,10 @@ CREATE TABLE IF NOT EXISTS users (
   created_at      TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at      TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS first_name VARCHAR(80) NULL;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS middle_initial VARCHAR(5) NULL;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS last_name VARCHAR(80) NULL;
 
 CREATE INDEX IF NOT EXISTS idx_users_role   ON users(role_id);
 CREATE INDEX IF NOT EXISTS idx_users_status ON users(status);

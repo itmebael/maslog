@@ -11,11 +11,11 @@
     "transaction-history.html",
     "qr-verification.html",
     "staff-fees.html",
-    "user-management.html",
   ]);
   const adminOnlyPages = new Set([
     "admin-dashboard.html",
     "staff-account.html",
+    "user-management.html",
     "sales-monitoring.html",
     "revenue-report.html",
     "system-configuration.html",
@@ -85,12 +85,6 @@
       match: ["staff-fees.html"],
       icon: '<svg viewBox="0 0 24 24"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
     },
-    {
-      href: "user-management.html",
-      label: "User Management",
-      match: ["user-management.html"],
-      icon: '<svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
-    },
   ];
 
   function applyStaffShell() {
@@ -115,8 +109,9 @@
       const av = profile.querySelector(".avatar-fallback");
       const strong = profile.querySelector("strong");
       const span = profile.querySelector("span");
-      if (av) av.textContent = "NF";
-      if (strong) strong.textContent = "Neneth Fabilla";
+      const session = getSavedSession();
+      if (av) av.textContent = session?.fullName ? session.fullName.split(/\s+/).slice(0, 2).map((w) => w[0]).join("").toUpperCase() : "ST";
+      if (strong) strong.textContent = session?.fullName || "Staff";
       if (span) span.textContent = "Staff";
     }
   }

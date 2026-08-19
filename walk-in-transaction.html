@@ -598,7 +598,7 @@
           <form class="search-group" onsubmit="return false;">
             <div class="field">
               <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-              <input type="search" placeholder="Search customer name or ID" />
+              <input type="search" placeholder="Search fees or rentals..." />
             </div>
             <button class="btn-search" type="submit">SEARCH</button>
           </form>
@@ -734,6 +734,7 @@
     let propertyRentals = adminFees.cottages;
     let partnership = loadLocalPartnership();
     let partnerships = [partnership];
+    const catalogSearch = document.querySelector(".top-actions .search-group input[type='search']");
     const money = (n) => "₱" + Number(n || 0).toLocaleString("en-PH");
 
     function renderCatalog() {
@@ -786,6 +787,7 @@
 
       renderPartnership();
       bindCatalogEvents();
+      applyCatalogSearch();
     }
 
     function renderPartnership() {
@@ -815,6 +817,14 @@
             </article>
           `).join("")
         : '<p style="font-size:0.85rem;color:var(--text-muted);padding:0.4rem 0;">No partnership rate configured.</p>';
+    }
+
+    function applyCatalogSearch() {
+      const q = (catalogSearch?.value || "").trim().toLowerCase();
+      document.querySelectorAll(".fee-card, .cottage-card").forEach((card) => {
+        const text = card.textContent.toLowerCase();
+        card.style.display = !q || text.includes(q) ? "" : "none";
+      });
     }
 
     const cart = [];
@@ -922,6 +932,9 @@
         btn.classList.add("active");
       });
     });
+
+    catalogSearch?.addEventListener("input", applyCatalogSearch);
+    document.querySelector(".top-actions .search-group")?.addEventListener("submit", applyCatalogSearch);
 
     function receiptApprover() {
       try {

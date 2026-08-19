@@ -91,15 +91,9 @@
   }
 
   // ——— Auth ———
-  db.login = async function (email, password, portal) {
+  db.login = async function (email, password) {
     const loginEmail = email.trim().toLowerCase();
     const hash = await MaslogConfig.sha256(password);
-
-    function assertPortal(roleCode) {
-      if (portal === "admin" && roleCode !== "admin") throw new Error("This account is not an Admin");
-      if (portal === "staff" && roleCode !== "staff" && roleCode !== "admin") throw new Error("This account is not Staff");
-      if (portal === "client" && roleCode !== "client") throw new Error("This account is not a Client");
-    }
 
     const { data: user, error } = await sb()
       .from("users")
@@ -114,7 +108,7 @@
     if (user.status !== "active") throw new Error("Account is not active (" + user.status + ")");
 
     const roleCode = user.roles?.role_code;
-    assertPortal(roleCode);
+    if (!["admin", "staff", "client"].includes(roleCode)) throw new Error("Account role is not configured");
 
     await sb().from("users").update({ last_login_at: new Date().toISOString() }).eq("id", user.id);
 
@@ -124,11 +118,210 @@
       fullName: user.full_name,
       phone: user.phone,
       role: roleCode,
-      portal: portal || roleCode,
+      portal: roleCode,
     };
     MaslogConfig.saveSession(session);
     return session;
   };
+
+  db.startGoogleClientLogin = async function () {
+    const redirectTo = `${location.origin}${location.pathname}`;
+    if (typeof fetch === "function") {
+      try {
+        await fetch(`${MaslogConfig.SUPABASE_URL}/auth/v1/health`, {
+          mode: "no-cors",
+          cache: "no-store",
+        });
+      } catch {
+        throw new Error(`Supabase project URL cannot be reached: ${MaslogConfig.SUPABASE_URL}`);
+      }
+    }
+    const { error } = await sb().auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo },
+    });
+    if (error) {
+      const msg = String(error.message || error.msg || "").toLowerCase();
+      if (msg.includes("unsupported provider") || msg.includes("provider is not enabled")) {
+        throw new Error("Google login is not enabled for this Supabase project yet. Please sign in with email and password, or enable the Google provider in Supabase Auth.");
+      }
+      throw error;
+    }
+  };
+
+  db.completeGoogleClientLogin = async function () {
+    const params = new URLSearchParams(location.search);
+    const code = params.get("code");
+    if (code) {
+      const { error } = await sb().auth.exchangeCodeForSession(code);
+      if (error) throw error;
+      history.replaceState(null, document.title, location.pathname);
+    }
+
+    const { data: authData, error: authError } = await sb().auth.getSession();
+    if (authError) throw authError;
+    const authUser = authData?.session?.user;
+    const email = String(authUser?.email || "").trim().toLowerCase();
+    if (!email) return null;
+
+    if (!email.endsWith("@gmail.com")) {
+      await sb().auth.signOut();
+      throw new Error("Google login is only available for Gmail client accounts");
+    }
+
+    const { data: user, error } = await sb()
+      .from("users")
+      .select("id, email, full_name, phone, status, role_id, roles(role_code, role_name)")
+      .eq("email", email)
+      .maybeSingle();
+    if (error) throw error;
+
+    const roleCode = user?.roles?.role_code;
+    if (!user || roleCode !== "client") {
+      await sb().auth.signOut();
+      throw new Error("This Google email is not registered as an approved client account");
+    }
+    if (user.status !== "active") {
+      await sb().auth.signOut();
+      throw new Error("Client account is not active (" + user.status + ")");
+    }
+
+    await sb().from("users").update({ last_login_at: new Date().toISOString() }).eq("id", user.id);
+
+    const session = {
+      userId: user.id,
+      email: user.email,
+      fullName: user.full_name,
+      phone: user.phone,
+      role: "client",
+      portal: "client",
+    };
+    MaslogConfig.saveSession(session);
+    await sb().auth.signOut();
+    return session;
+  };
+
+  db.sendSignupEmailCode = async function (email) {
+    const loginEmail = String(email || "").trim().toLowerCase();
+    if (!loginEmail.endsWith("@gmail.com")) throw new Error("Use a valid Gmail address");
+
+    const { data: existing, error: findError } = await sb()
+      .from("users")
+      .select("id")
+      .eq("email", loginEmail)
+      .maybeSingle();
+    if (findError) throw findError;
+    if (existing) throw new Error("This Gmail is already registered");
+
+    const { error } = await sb().auth.signInWithOtp({
+      email: loginEmail,
+      options: {
+        shouldCreateUser: true,
+        emailRedirectTo: `${location.origin}${location.pathname}`,
+      },
+    });
+    if (error) throw error;
+    return true;
+  };
+
+  db.verifySignupEmailCode = async function (email, token) {
+    const loginEmail = String(email || "").trim().toLowerCase();
+    const cleanToken = String(token || "").replace(/\D/g, "");
+    if (!loginEmail.endsWith("@gmail.com")) throw new Error("Use a valid Gmail address");
+    if (cleanToken.length < 6) throw new Error("Enter the 6-digit Gmail verification code");
+
+    const { data, error } = await sb().auth.verifyOtp({
+      email: loginEmail,
+      token: cleanToken,
+      type: "email",
+    });
+    if (error) throw new Error("Invalid or expired Gmail verification code");
+    const verifiedEmail = String(data?.user?.email || "").toLowerCase();
+    if (verifiedEmail !== loginEmail) throw new Error("Gmail verification did not match this email");
+    return true;
+  };
+
+  async function logPasswordReset(user, action, details) {
+    if (!user?.id) return;
+    try {
+      const roleCode = user.roles?.role_code;
+      const { error } = await sb().from("audit_logs").insert({
+        user_id: user.id,
+        portal: ["admin", "staff", "client"].includes(roleCode) ? roleCode : null,
+        action,
+        table_name: "users",
+        record_id: String(user.id),
+        details,
+      });
+      if (error) console.warn("Password reset audit log failed", error);
+    } catch (err) {
+      console.warn("Password reset audit log failed", err);
+    }
+  }
+
+  db.sendPasswordResetCode = async function (email) {
+    const loginEmail = String(email || "").trim().toLowerCase();
+    if (!loginEmail) throw new Error("Enter the email address for the account");
+
+    const { data: user, error } = await sb()
+      .from("users")
+      .select("id, email, full_name, roles(role_code)")
+      .eq("email", loginEmail)
+      .maybeSingle();
+    if (error) throw error;
+
+    if (user?.id) {
+      const { error: otpError } = await sb().auth.signInWithOtp({
+        email: loginEmail,
+        options: {
+          shouldCreateUser: true,
+          emailRedirectTo: `${location.origin}${location.pathname}`,
+        },
+      });
+      if (otpError) throw otpError;
+      await logPasswordReset(user, "password_reset_code_sent", `Password reset code sent to ${user.email}`);
+    }
+
+    return true;
+  };
+
+  db.resetPasswordWithCode = async function (email, token, newPassword) {
+    const loginEmail = String(email || "").trim().toLowerCase();
+    const cleanToken = String(token || "").replace(/\D/g, "");
+    if (!loginEmail) throw new Error("Enter the email address for the account");
+    if (cleanToken.length < 6) throw new Error("Enter the 6-digit password reset code");
+    if (String(newPassword || "").length < 8) throw new Error("Password must be at least 8 characters");
+
+    const { data, error } = await sb().auth.verifyOtp({
+      email: loginEmail,
+      token: cleanToken,
+      type: "email",
+    });
+    if (error) throw new Error("Invalid or expired password reset code");
+    const verifiedEmail = String(data?.user?.email || "").toLowerCase();
+    if (verifiedEmail !== loginEmail) throw new Error("Password reset code did not match this email");
+
+    const { data: user, error: findError } = await sb()
+      .from("users")
+      .select("id, email, full_name, roles(role_code)")
+      .eq("email", loginEmail)
+      .maybeSingle();
+    if (findError) throw findError;
+    if (!user) throw new Error("No account found for this email");
+
+    const hash = await MaslogConfig.sha256(newPassword);
+    const { error: updateError } = await sb()
+      .from("users")
+      .update({ password_hash: hash, updated_at: new Date().toISOString() })
+      .eq("id", user.id);
+    if (updateError) throw updateError;
+
+    await logPasswordReset(user, "password_reset_completed", `Password reset completed for ${user.email}`);
+    await sb().auth.signOut().catch(() => {});
+    return true;
+  };
+
+  db.requestPasswordReset = db.sendPasswordResetCode;
 
   db.logout = function () {
     MaslogConfig.clearSession();
@@ -146,6 +339,21 @@
     const email = payload.email.trim().toLowerCase();
     const { data: existing } = await sb().from("users").select("id").eq("email", email).maybeSingle();
     if (existing) throw new Error("This Gmail is already registered");
+    if (!payload.gmailVerified) throw new Error("Please verify your Gmail before submitting");
+
+    const { data: authData, error: authErr } = await sb().auth.getUser();
+    if (authErr) throw authErr;
+    const verifiedEmail = String(authData?.user?.email || "").toLowerCase();
+    if (verifiedEmail !== email) throw new Error("Please verify this Gmail address before submitting");
+
+    const firstName = String(payload.firstName || "").trim();
+    const middleInitial = String(payload.middleInitial || "").replace(/\./g, "").trim().slice(0, 1).toUpperCase();
+    const lastName = String(payload.lastName || "").trim();
+    const fullName = [firstName, middleInitial ? `${middleInitial}.` : "", lastName]
+      .filter(Boolean)
+      .join(" ")
+      .trim() || String(payload.fullName || "").trim();
+    if (!fullName || !firstName || !lastName) throw new Error("First name and last name are required");
 
     const hash = await MaslogConfig.sha256(payload.password);
     const { data: role, error: roleErr } = await sb()
@@ -160,18 +368,37 @@
     const selfiePath = saveLocalDoc(code, "selfie", payload.selfie);
     const validIdPath = saveLocalDoc(code, "valid-id", payload.validId);
 
-    const { data: user, error: uErr } = await sb()
+    const userRecord = {
+      role_id: role.id,
+      email,
+      password_hash: hash,
+      full_name: fullName,
+      phone: payload.phone.trim(),
+      status: "pending",
+    };
+    const splitNameFields = {
+      first_name: firstName,
+      middle_initial: middleInitial || null,
+      last_name: lastName,
+    };
+
+    let { data: user, error: uErr } = await sb()
       .from("users")
-      .insert({
-        role_id: role.id,
-        email,
-        password_hash: hash,
-        full_name: payload.fullName.trim(),
-        phone: payload.phone.trim(),
-        status: "pending",
-      })
+      .insert({ ...userRecord, ...splitNameFields })
       .select("id")
       .single();
+
+    if (uErr) {
+      const msg = String(uErr.message || uErr.details || "").toLowerCase();
+      const missingSplitNameColumn =
+        ["first_name", "middle_initial", "last_name"].some((col) => msg.includes(col)) &&
+        /(schema|column|cache|could not find)/i.test(msg);
+      if (missingSplitNameColumn) {
+        const retry = await sb().from("users").insert(userRecord).select("id").single();
+        user = retry.data;
+        uErr = retry.error;
+      }
+    }
     if (uErr) throw uErr;
 
     let idTypeId = null;
@@ -193,6 +420,7 @@
       await sb().from("users").delete().eq("id", user.id);
       throw cErr;
     }
+    await sb().auth.signOut().catch(() => {});
     return { userId: user.id, registrationCode: code };
   };
 
@@ -424,10 +652,15 @@
     return user.id;
   };
 
-  db.deleteStaffAccount = async function (userId) {
-    const { error } = await sb().from("users").delete().eq("id", userId);
+  db.archiveStaffAccount = async function (userId) {
+    const { error } = await sb()
+      .from("users")
+      .update({ status: "inactive", updated_at: new Date().toISOString() })
+      .eq("id", userId);
     if (error) throw error;
   };
+
+  db.deleteStaffAccount = db.archiveStaffAccount;
 
   // ——— Admin fees ———
   db.getAdminEntranceFees = async function () {
@@ -1033,38 +1266,84 @@
     }));
   };
 
+  function localDayRange(date = new Date()) {
+    const start = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const end = new Date(start);
+    end.setDate(start.getDate() + 1);
+    return { start: start.toISOString(), end: end.toISOString() };
+  }
+
+  function mapWalkIn(w) {
+    const items = w.walk_in_items || [];
+    const entranceTotal = items
+      .filter((item) => item.item_type === "entrance")
+      .reduce((sum, item) => sum + Number(item.line_total || 0), 0);
+    const propertyTotal = items
+      .filter((item) => item.item_type === "cottage" || /rental/i.test(item.item_name || ""))
+      .reduce((sum, item) => sum + Number(item.line_total || 0), 0);
+    const visitorCount = items
+      .filter((item) => item.item_type === "entrance")
+      .reduce((sum, item) => sum + Number(item.qty || 0), 0);
+    return {
+      id: w.id,
+      code: w.trx_code,
+      customer: w.guest_name || "Walk-in Guest",
+      date: w.created_at,
+      type: "Walk-in",
+      status: w.status || "completed",
+      payment: w.payment_method || "cash",
+      total: Number(w.total_amount || 0),
+      entranceTotal,
+      propertyTotal,
+      visitorCount,
+      cashierUserId: w.cashier_user_id,
+      createdAt: w.created_at,
+    };
+  }
+
   db.listAdminWalkIns = async function () {
     const { data, error } = await sb()
       .from("walk_in_transactions")
       .select("*, walk_in_items(item_type, item_name, qty, line_total)")
       .order("created_at", { ascending: false });
     if (error) throw error;
-    return (data || []).map((w) => {
-      const items = w.walk_in_items || [];
-      const entranceTotal = items
-        .filter((item) => item.item_type === "entrance")
-        .reduce((sum, item) => sum + Number(item.line_total || 0), 0);
-      const propertyTotal = items
-        .filter((item) => item.item_type === "cottage" || /rental/i.test(item.item_name || ""))
-        .reduce((sum, item) => sum + Number(item.line_total || 0), 0);
-      const visitorCount = items
-        .filter((item) => item.item_type === "entrance")
-        .reduce((sum, item) => sum + Number(item.qty || 0), 0);
-      return {
-        id: w.id,
-        code: w.trx_code,
-        customer: w.guest_name || "Walk-in Guest",
-        date: w.created_at,
-        type: "Walk-in",
-        status: w.status || "completed",
-        payment: w.payment_method || "cash",
-        total: Number(w.total_amount || 0),
-        entranceTotal,
-        propertyTotal,
-        visitorCount,
-        createdAt: w.created_at,
-      };
-    });
+    return (data || []).map(mapWalkIn);
+  };
+
+  db.listStaffDailyWalkIns = async function () {
+    const session = MaslogConfig.getSession();
+    const cashierId = Number(session?.userId);
+    if (!Number.isFinite(cashierId)) return [];
+    const { start, end } = localDayRange();
+    const { data, error } = await sb()
+      .from("walk_in_transactions")
+      .select("*, walk_in_items(item_type, item_name, qty, line_total)")
+      .eq("cashier_user_id", cashierId)
+      .gte("created_at", start)
+      .lt("created_at", end)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return (data || []).map(mapWalkIn);
+  };
+
+  db.listStaffDailyQrVerifications = async function () {
+    const session = MaslogConfig.getSession();
+    const staffId = Number(session?.userId);
+    if (!Number.isFinite(staffId)) return [];
+    const { start, end } = localDayRange();
+    const { data, error } = await sb()
+      .from("qr_verifications")
+      .select("id, scan_result, verified_at")
+      .eq("verified_by", staffId)
+      .gte("verified_at", start)
+      .lt("verified_at", end)
+      .order("verified_at", { ascending: false });
+    if (error) throw error;
+    return (data || []).map((q) => ({
+      id: q.id,
+      status: q.scan_result,
+      date: q.verified_at,
+    }));
   };
 
   db.createWalkInTransaction = async function ({ code, items, paymentMethod, subtotal, tax, discount, total, guestName = "Walk-in Guest", qrPayload = "" }) {
@@ -1120,20 +1399,32 @@
   };
 
   db.listAdminTransactions = async function () {
-    const [bookings, walkIns] = await Promise.all([db.listAdminBookings(), db.listAdminWalkIns()]);
+    const [bookings, walkIns, settings] = await Promise.all([
+      db.listAdminBookings(),
+      db.listAdminWalkIns(),
+      db.getBookingSettings().catch(() => null),
+    ]);
+    const rates = settings?.entranceFees || { adult: 0, child: 0, senior: 0 };
     return [
-      ...bookings.map((b) => ({
-        source: "Online Booking",
-        code: b.code,
-        customer: b.customer,
-        date: b.createdAt || b.date,
-        type: b.propertyName,
-        status: b.paymentStatus || b.status,
-        total: b.total,
-        entranceTotal: 0,
-        propertyTotal: b.total,
-        visitorCount: b.guests || 0,
-      })),
+      ...bookings.map((b) => {
+        const entranceTotal =
+          Number(b.adults || 0) * Number(rates.adult || 0) +
+          Number(b.children || 0) * Number(rates.child || 0) +
+          Number(b.seniors || 0) * Number(rates.senior || 0);
+        const total = Number(b.total || 0);
+        return {
+          source: "Online Booking",
+          code: b.code,
+          customer: b.customer,
+          date: b.createdAt || b.date,
+          type: b.propertyName,
+          status: b.paymentStatus || b.status,
+          total,
+          entranceTotal: Math.min(entranceTotal, total),
+          propertyTotal: Math.max(total - entranceTotal, 0),
+          visitorCount: b.guests || 0,
+        };
+      }),
       ...walkIns.map((w) => ({
         source: "Walk-in",
         code: w.code,
@@ -1147,6 +1438,22 @@
         visitorCount: w.visitorCount || 0,
       })),
     ].sort((a, b) => new Date(b.date) - new Date(a.date));
+  };
+
+  db.listStaffDailyTransactions = async function () {
+    const walkIns = await db.listStaffDailyWalkIns();
+    return walkIns.map((w) => ({
+      source: "Walk-in",
+      code: w.code,
+      customer: w.customer,
+      date: w.createdAt || w.date,
+      type: "Walk-in Transaction",
+      status: w.status,
+      total: w.total,
+      entranceTotal: w.entranceTotal || 0,
+      propertyTotal: w.propertyTotal || 0,
+      visitorCount: w.visitorCount || 0,
+    }));
   };
 
   db.listNotifications = async function (userId) {

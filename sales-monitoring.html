@@ -160,6 +160,40 @@
       });
     }
 
+    function dateKey(value) {
+      if (!value) return "";
+      const raw = String(value);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return raw.slice(0, 10);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+
+    function parseLocalDateKey(key) {
+      if (!key) return null;
+      const [y, m, d] = String(key).slice(0, 10).split("-").map(Number);
+      if (!y || !m || !d) return null;
+      return new Date(y, m - 1, d);
+    }
+
+    function getActiveRange() {
+      const root = document.querySelector("[data-date-range]");
+      const from = parseLocalDateKey(root?.dataset.from);
+      const to = parseLocalDateKey(root?.dataset.to);
+      if (to) to.setHours(23, 59, 59, 999);
+      return { from, to };
+    }
+
+    function isInActiveRange(row) {
+      const { from, to } = getActiveRange();
+      if (!from || !to) return true;
+      const d = parseLocalDateKey(dateKey(row.date));
+      return !!d && d >= from && d <= to;
+    }
+
     function tagClass(source, status) {
       const s = String(status || "").toLowerCase();
       if (source === "Online Booking") return "cottage";
@@ -181,8 +215,9 @@
         const text = [row.code, row.customer, row.source, row.type, row.status].join(" ").toLowerCase();
         const matchesText = !q || text.includes(q);
         const matchesType = selectedType === "all type" || row.source.toLowerCase() === selectedType;
-        return matchesText && matchesType;
+        return matchesText && matchesType && isInActiveRange(row);
       });
+      updateStats(filtered);
 
       if (!filtered.length) {
         salesBody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#6b7280;padding:1.2rem;">No sales transactions found in the database</td></tr>';
@@ -190,7 +225,7 @@
       }
 
       salesBody.innerHTML = filtered.map((row) => `
-        <tr data-date="${String(row.date || "").slice(0, 10)}">
+        <tr data-date="${dateKey(row.date)}">
           <td>${dateTimeLabel(row.date)}</td>
           <td><span class="link-id">${row.code || ""}</span></td>
           <td>${row.customer || ""}</td>
@@ -202,11 +237,11 @@
 
     salesSearch.addEventListener("input", renderSales);
     salesType.addEventListener("change", renderSales);
+    document.querySelector("[data-date-range]")?.addEventListener("daterangechange", renderSales);
 
     (async function initSalesMonitor() {
       try {
         salesRows = await MaslogDB.listAdminTransactions();
-        updateStats(salesRows);
         renderSales();
       } catch (err) {
         salesBody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#b42318;padding:1.2rem;">${err.message || "Failed to load sales transactions"}</td></tr>`;

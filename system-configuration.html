@@ -314,6 +314,25 @@
       btn.addEventListener("click", () => activateTab(btn.dataset.tab));
     });
 
+    const settingsSearch = document.querySelector(".top-actions .search-group input[type='search']");
+
+    function applySettingsSearch() {
+      const q = (settingsSearch?.value || "").trim().toLowerCase();
+      if (!q) return;
+      const panel = [...document.querySelectorAll(".config-panel")].find((item) =>
+        item.textContent.toLowerCase().includes(q)
+      );
+      if (panel) {
+        activateTab(panel.id.replace("panel-", ""));
+        panel.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else {
+        showToast("No matching setting found");
+      }
+    }
+
+    settingsSearch?.addEventListener("input", applySettingsSearch);
+    document.querySelector(".top-actions .search-group")?.addEventListener("submit", applySettingsSearch);
+
     const hash = (location.hash || "").replace("#", "");
     if (hash === "entrance" || hash === "cottage") activateTab(hash);
 

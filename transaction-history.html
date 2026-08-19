@@ -116,6 +116,10 @@
             <svg viewBox="0 0 24 24"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
             Apply
           </button>
+          <button type="button" class="btn btn-primary" id="exportExcel">
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+            Export Excel
+          </button>
         </form>
 
         <section class="card">
@@ -154,8 +158,12 @@
   <script>
     const txBody = document.getElementById("txHistoryBody");
     const txQuery = document.getElementById("txQuery");
+    const headerSearch = document.querySelector(".top-actions .search-group input[type='search']");
     const txType = document.getElementById("txType");
+    const session = MaslogConfig.getSession();
+    const isStaffSession = session?.role === "staff";
     let adminTransactions = [];
+    let visibleTransactions = [];
 
     function money(n) {
       return MaslogDB.formatMoney ? MaslogDB.formatMoney(n) : "PHP " + Number(n || 0).toLocaleString("en-PH");
@@ -180,6 +188,40 @@
       return "entrance";
     }
 
+    function dateKey(value) {
+      if (!value) return "";
+      const raw = String(value);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return raw.slice(0, 10);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+
+    function parseLocalDateKey(key) {
+      if (!key) return null;
+      const [y, m, d] = String(key).slice(0, 10).split("-").map(Number);
+      if (!y || !m || !d) return null;
+      return new Date(y, m - 1, d);
+    }
+
+    function getActiveRange() {
+      const root = document.querySelector("[data-date-range]");
+      const from = parseLocalDateKey(root?.dataset.from);
+      const to = parseLocalDateKey(root?.dataset.to);
+      if (to) to.setHours(23, 59, 59, 999);
+      return { from, to };
+    }
+
+    function isInActiveRange(tx) {
+      const { from, to } = getActiveRange();
+      if (!from || !to) return true;
+      const d = parseLocalDateKey(dateKey(tx.date));
+      return !!d && d >= from && d <= to;
+    }
+
     function updateTxStats(list) {
       document.getElementById("statAllTx").textContent = list.length;
       document.getElementById("statOnlineTx").textContent = list.filter((t) => t.source === "Online Booking").length;
@@ -187,15 +229,20 @@
       document.getElementById("statTotalTx").textContent = money(list.reduce((sum, t) => sum + Number(t.total || 0), 0));
     }
 
-    function renderTransactions() {
-      const q = txQuery.value.trim().toLowerCase();
+    function getFilteredTransactions() {
+      const q = String(txQuery.value || headerSearch?.value || "").trim().toLowerCase();
       const source = txType.value.toLowerCase();
-      const filtered = adminTransactions.filter((t) => {
+      return adminTransactions.filter((t) => {
         const text = [t.code, t.customer, t.source, t.type, t.status].join(" ").toLowerCase();
         const matchesText = !q || text.includes(q);
         const matchesSource = source === "all type" || t.source.toLowerCase() === source;
-        return matchesText && matchesSource;
+        return matchesText && matchesSource && isInActiveRange(t);
       });
+    }
+
+    function renderTransactions() {
+      const filtered = getFilteredTransactions();
+      visibleTransactions = filtered;
 
       if (!filtered.length) {
         txBody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#6b7280;padding:1.2rem;">No online or walk-in history found in the database</td></tr>';
@@ -204,7 +251,7 @@
       }
 
       txBody.innerHTML = filtered.map((t) => `
-        <tr data-date="${String(t.date || "").slice(0, 10)}">
+        <tr data-date="${dateKey(t.date)}">
           <td>${dateTimeLabel(t.date)}</td>
           <td><span class="link-id">${t.code || ""}</span></td>
           <td>${t.customer || ""}</td>
@@ -216,12 +263,57 @@
       document.querySelector(".pagination .info").textContent = `Showing ${filtered.length} transaction${filtered.length !== 1 ? "s" : ""}`;
     }
 
-    txQuery.addEventListener("input", renderTransactions);
+    function excelCell(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    }
+
+    function exportVisibleTransactions() {
+      const rows = visibleTransactions.length ? visibleTransactions : getFilteredTransactions();
+      if (!rows.length) {
+        alert("No transactions to export.");
+        return;
+      }
+      const tableRows = rows.map((t) => `
+        <tr>
+          <td>${excelCell(dateTimeLabel(t.date))}</td>
+          <td>${excelCell(t.code)}</td>
+          <td>${excelCell(t.customer)}</td>
+          <td>${excelCell(t.source)}</td>
+          <td>${Number(t.total || 0)}</td>
+          <td>${excelCell(t.status)}</td>
+        </tr>`).join("");
+      const html = `<!doctype html><html><head><meta charset="UTF-8"></head><body><table border="1"><thead><tr><th>Date & Time</th><th>Receipt ID</th><th>Customer</th><th>Source</th><th>Amount</th><th>Status</th></tr></thead><tbody>${tableRows}</tbody></table></body></html>`;
+      const blob = new Blob([html], { type: "application/vnd.ms-excel;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `maslog-transactions-${new Date().toISOString().slice(0, 10)}.xls`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    txQuery.addEventListener("input", () => {
+      if (headerSearch) headerSearch.value = txQuery.value;
+      renderTransactions();
+    });
+    headerSearch?.addEventListener("input", () => {
+      txQuery.value = headerSearch.value;
+      renderTransactions();
+    });
     txType.addEventListener("change", renderTransactions);
+    document.querySelector("[data-date-range]")?.addEventListener("daterangechange", renderTransactions);
+    document.getElementById("exportExcel").addEventListener("click", exportVisibleTransactions);
 
     (async function initTransactionMonitor() {
       try {
-        adminTransactions = await MaslogDB.listAdminTransactions();
+        adminTransactions = isStaffSession && MaslogDB.listStaffDailyTransactions
+          ? await MaslogDB.listStaffDailyTransactions()
+          : await MaslogDB.listAdminTransactions();
         updateTxStats(adminTransactions);
         renderTransactions();
       } catch (err) {

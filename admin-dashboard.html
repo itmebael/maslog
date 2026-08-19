@@ -471,6 +471,7 @@
     }
 
     .dot.green { background: var(--green-dark); }
+    .dot.blue { background: var(--blue); }
     .dot.yellow { background: var(--yellow); }
 
     .occupancy-wrap {
@@ -927,6 +928,7 @@
             </div>
             <div class="legend-row">
               <span><i class="dot green"></i> Total Revenue</span>
+              <span><i class="dot blue"></i> Entrance Fees</span>
               <span><i class="dot yellow"></i> Cottages</span>
             </div>
             <div class="chart-wrap">
@@ -1011,9 +1013,15 @@
   <script>
     const weeklyLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
     const weeklyRevenue = [0, 0, 0, 0, 0, 0, 0];
+    const weeklyEntrance = [0, 0, 0, 0, 0, 0, 0];
     const weeklyCottages = [0, 0, 0, 0, 0, 0, 0];
-    const monthlyLabels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
+    const monthFormatter = new Intl.DateTimeFormat("en-US", { month: "short" });
+    const monthlyLabels = Array.from({ length: 6 }, (_, i) => {
+      const now = new Date();
+      return monthFormatter.format(new Date(now.getFullYear(), now.getMonth() - 5 + i, 1));
+    });
     const monthlyRevenue = [0, 0, 0, 0, 0, 0];
+    const monthlyEntrance = [0, 0, 0, 0, 0, 0];
     const monthlyCottages = [0, 0, 0, 0, 0, 0];
 
     const revenueChart = new Chart(document.getElementById("revenueChart"), {
@@ -1031,6 +1039,17 @@
             borderWidth: 2.5,
             pointRadius: 4,
             pointBackgroundColor: "#27ae60",
+          },
+          {
+            label: "Entrance Fees",
+            data: weeklyEntrance,
+            borderColor: "#3498db",
+            backgroundColor: "transparent",
+            fill: false,
+            tension: 0.4,
+            borderWidth: 2.5,
+            pointRadius: 4,
+            pointBackgroundColor: "#3498db",
           },
           {
             label: "Cottages",
@@ -1076,11 +1095,7 @@
       btn.addEventListener("click", () => {
         document.querySelectorAll(".toggle button").forEach((b) => b.classList.remove("active"));
         btn.classList.add("active");
-        const isWeekly = btn.dataset.period === "weekly";
-        revenueChart.data.labels = isWeekly ? weeklyLabels : monthlyLabels;
-        revenueChart.data.datasets[0].data = isWeekly ? weeklyRevenue : monthlyRevenue;
-        revenueChart.data.datasets[1].data = isWeekly ? weeklyCottages : monthlyCottages;
-        revenueChart.update();
+        updateRevenueChart(filteredDashboardTransactions());
       });
     });
 
@@ -1104,6 +1119,7 @@
     });
 
     const txSearch = document.getElementById("txSearch");
+    const headerSearch = document.querySelector(".top-actions .search-group input[type='search']");
     const txBody = document.getElementById("txBody");
     let dashboardTransactions = [];
 
@@ -1128,14 +1144,93 @@
       return "entrance";
     }
 
-    function renderDashboardRows(list) {
+    function dateKey(value) {
+      if (!value) return "";
+      const raw = String(value);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return raw.slice(0, 10);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+
+    function parseLocalDateKey(key) {
+      if (!key) return null;
+      const [y, m, d] = String(key).slice(0, 10).split("-").map(Number);
+      if (!y || !m || !d) return null;
+      return new Date(y, m - 1, d);
+    }
+
+    function getActiveRange() {
+      const root = document.querySelector("[data-date-range]");
+      const from = parseLocalDateKey(root?.dataset.from);
+      const to = parseLocalDateKey(root?.dataset.to);
+      if (to) to.setHours(23, 59, 59, 999);
+      return { from, to };
+    }
+
+    function isInActiveRange(tx) {
+      const { from, to } = getActiveRange();
+      if (!from || !to) return true;
+      const d = parseLocalDateKey(dateKey(tx.date));
+      return !!d && d >= from && d <= to;
+    }
+
+    function filteredDashboardTransactions() {
+      const q = String(txSearch.value || headerSearch?.value || "").toLowerCase().trim();
+      return dashboardTransactions.filter((t) => {
+        const text = [t.code, t.customer, t.source, t.type, t.status].join(" ").toLowerCase();
+        return (!q || text.includes(q)) && isInActiveRange(t);
+      });
+    }
+
+    function isRevenueStatus(status) {
+      const s = String(status || "").toLowerCase();
+      return !["cancelled", "rejected", "void", "refunded", "pending"].includes(s);
+    }
+
+    function updateRevenueChart(list) {
+      const revenueRows = list.filter((t) => isRevenueStatus(t.status));
+      const activePeriod = document.querySelector(".toggle button.active")?.dataset.period || "weekly";
+      const labels = activePeriod === "weekly" ? weeklyLabels : monthlyLabels;
+      const revenue = labels.map(() => 0);
+      const entrance = labels.map(() => 0);
+      const cottages = labels.map(() => 0);
+      const today = new Date();
+
+      revenueRows.forEach((t) => {
+        const d = parseLocalDateKey(dateKey(t.date));
+        if (!d) return;
+        let idx = -1;
+        if (activePeriod === "weekly") {
+          idx = d.getDay() === 0 ? 6 : d.getDay() - 1;
+        } else {
+          idx = d.getMonth() - Math.max(0, today.getMonth() - 5);
+        }
+        if (idx < 0 || idx >= labels.length) return;
+        revenue[idx] += Number(t.total || 0);
+        entrance[idx] += Number(t.entranceTotal || 0);
+        cottages[idx] += Number(t.propertyTotal || 0);
+      });
+
+      revenueChart.data.labels = labels;
+      revenueChart.data.datasets[0].data = revenue;
+      revenueChart.data.datasets[1].data = entrance;
+      revenueChart.data.datasets[2].data = cottages;
+      revenueChart.update();
+    }
+
+    function renderDashboardRows(list, emptyText = "No online or walk-in history found in the database") {
+      updateRevenueChart(list);
       const rows = list.slice(0, 8);
       if (!rows.length) {
-        txBody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#6b7280;padding:1.2rem;">No online or walk-in history found in the database</td></tr>';
+        txBody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#6b7280;padding:1.2rem;">${emptyText}</td></tr>`;
         return;
       }
       txBody.innerHTML = rows.map((t) => `
-        <tr data-date="${String(t.date || "").slice(0, 10)}">
+        <tr data-date="${dateKey(t.date)}">
           <td>${dashDate(t.date)}</td>
           <td class="id-cell">${t.code || ""}</td>
           <td>
@@ -1166,15 +1261,25 @@
         document.getElementById("dashWalkInCount").textContent = walkIns.length;
         document.getElementById("dashAllCount").textContent = transactions.length;
         document.getElementById("dashTotalAmount").textContent = dashMoney(transactions.reduce((sum, t) => sum + Number(t.total || 0), 0));
-        renderDashboardRows(transactions);
+        renderDashboardRows(filteredDashboardTransactions(), "No transactions found for selected date range");
       } catch (err) {
         txBody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#b42318;padding:1.2rem;">${err.message || "Failed to load dashboard history"}</td></tr>`;
       }
     })();
 
     txSearch.addEventListener("input", () => {
-      const q = txSearch.value.toLowerCase().trim();
-      renderDashboardRows(dashboardTransactions.filter((t) => [t.code, t.customer, t.source, t.type, t.status].join(" ").toLowerCase().includes(q)));
+      if (headerSearch) headerSearch.value = txSearch.value;
+      renderDashboardRows(filteredDashboardTransactions(), "No transactions found for this search");
+    });
+    headerSearch?.addEventListener("input", () => {
+      txSearch.value = headerSearch.value;
+      renderDashboardRows(filteredDashboardTransactions(), "No transactions found for this search");
+    });
+    document.querySelector(".btn-filter")?.addEventListener("click", () => {
+      renderDashboardRows(filteredDashboardTransactions(), "No transactions found for selected date range");
+    });
+    document.querySelector("[data-date-range]")?.addEventListener("daterangechange", () => {
+      renderDashboardRows(filteredDashboardTransactions(), "No transactions found for selected date range");
     });
   </script>
 </body>

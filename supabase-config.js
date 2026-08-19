@@ -11,7 +11,14 @@
     if (!global.supabase || !global.supabase.createClient) {
       throw new Error("Supabase JS not loaded. Include @supabase/supabase-js before this file.");
     }
-    global.__maslogSupabase = global.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    global.__maslogSupabase = global.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: {
+        flowType: "pkce",
+        detectSessionInUrl: true,
+        persistSession: true,
+        autoRefreshToken: true,
+      },
+    });
     return global.__maslogSupabase;
   }
 

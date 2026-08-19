@@ -249,7 +249,18 @@
       align-items: stretch;
     }
 
-    .gmail-row input { flex: 1; }
+    .gmail-row input,
+    .otp-box input {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .btn-inline {
+      flex: 0 0 auto;
+      min-width: 104px;
+      padding: 0.7rem 0.85rem;
+      white-space: nowrap;
+    }
 
     .verify-badge {
       display: inline-flex;
@@ -260,6 +271,7 @@
       padding: 0.25rem 0.55rem;
       border-radius: 999px;
       width: fit-content;
+      margin-top: 0.15rem;
     }
 
     .verify-badge.pending { background: rgba(241, 196, 15, 0.2); color: #f7dc6f; }
@@ -274,7 +286,6 @@
     .otp-box.open { display: flex; }
 
     .otp-box input {
-      flex: 1;
       letter-spacing: 0.2em;
       text-align: center;
       font-weight: 650;
@@ -316,6 +327,9 @@
       .form-grid,
       .media-row { grid-template-columns: 1fr; }
 
+      .gmail-row,
+      .otp-box { flex-wrap: wrap; }
+
       .card {
         padding: 1.25rem 1rem;
       }
@@ -345,8 +359,16 @@
 
       <form id="regForm" class="form-grid" autocomplete="on">
         <div class="field">
-          <label for="fullName">Full Name</label>
-          <input id="fullName" name="fullName" type="text" placeholder="Juan Dela Cruz" required />
+          <label for="firstName">First Name</label>
+          <input id="firstName" name="firstName" type="text" placeholder="Juan" autocomplete="given-name" required />
+        </div>
+        <div class="field">
+          <label for="middleInitial">Middle Initial</label>
+          <input id="middleInitial" name="middleInitial" type="text" placeholder="M" autocomplete="additional-name" maxlength="2" />
+        </div>
+        <div class="field">
+          <label for="lastName">Last Name</label>
+          <input id="lastName" name="lastName" type="text" placeholder="Dela Cruz" autocomplete="family-name" required />
         </div>
         <div class="field">
           <label for="phone">Mobile Number</label>
@@ -356,9 +378,15 @@
         <div class="field span-2">
           <label for="email">Gmail Address</label>
           <div class="gmail-row">
-            <input id="email" name="email" type="email" placeholder="you@gmail.com" required />
+            <input id="email" name="email" type="email" placeholder="you@gmail.com" autocomplete="email" required />
+            <button type="button" class="btn btn-soft btn-inline" id="sendOtpBtn">Send Code</button>
           </div>
-          <p class="hint">Use a valid Gmail address.</p>
+          <span class="verify-badge pending" id="gmailBadge">Unverified</span>
+          <div class="otp-box" id="otpBox">
+            <input id="otpCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" />
+            <button type="button" class="btn btn-soft btn-inline" id="verifyOtpBtn">Verify</button>
+          </div>
+          <p class="hint">Use a valid Gmail address and verify the code before submitting.</p>
         </div>
 
         <div class="field">
@@ -416,7 +444,7 @@
         </div>
 
         <p class="note">
-          After you submit, your selfie, valid ID, and Gmail will be reviewed before your client account is approved.
+          After you submit, your selfie, valid ID, and verified Gmail will be reviewed before your client account is approved.
         </p>
 
         <button type="submit" class="btn btn-primary" id="submitBtn">Submit Registration</button>
@@ -433,6 +461,8 @@
     let stream = null;
     let selfieData = "";
     let idData = "";
+    let gmailVerified = false;
+    let verifiedEmail = "";
 
     const toast = document.getElementById("toast");
     function showToast(msg) {
@@ -441,6 +471,72 @@
       clearTimeout(showToast._t);
       showToast._t = setTimeout(() => toast.classList.remove("show"), 2800);
     }
+
+    const emailInput = document.getElementById("email");
+    const sendOtpBtn = document.getElementById("sendOtpBtn");
+    const verifyOtpBtn = document.getElementById("verifyOtpBtn");
+    const otpBox = document.getElementById("otpBox");
+    const otpCode = document.getElementById("otpCode");
+    const gmailBadge = document.getElementById("gmailBadge");
+
+    function setGmailVerified(isVerified) {
+      gmailVerified = isVerified;
+      gmailBadge.textContent = isVerified ? "Gmail verified" : "Unverified";
+      gmailBadge.className = "verify-badge " + (isVerified ? "ok" : "pending");
+    }
+
+    emailInput.addEventListener("input", () => {
+      verifiedEmail = "";
+      setGmailVerified(false);
+      otpBox.classList.remove("open");
+      otpCode.value = "";
+    });
+
+    sendOtpBtn.addEventListener("click", async () => {
+      const email = emailInput.value.trim().toLowerCase();
+      if (!email.endsWith("@gmail.com")) {
+        showToast("Gmail address is required");
+        return;
+      }
+
+      const prev = sendOtpBtn.textContent;
+      sendOtpBtn.disabled = true;
+      sendOtpBtn.textContent = "Sending...";
+      try {
+        await MaslogDB.sendSignupEmailCode(email);
+        verifiedEmail = "";
+        setGmailVerified(false);
+        otpBox.classList.add("open");
+        otpCode.focus();
+        showToast("Verification code sent to your Gmail");
+      } catch (err) {
+        showToast(err.message || "Unable to send Gmail verification code");
+      } finally {
+        sendOtpBtn.disabled = false;
+        sendOtpBtn.textContent = prev;
+      }
+    });
+
+    verifyOtpBtn.addEventListener("click", async () => {
+      const email = emailInput.value.trim().toLowerCase();
+      const token = otpCode.value.trim();
+      const prev = verifyOtpBtn.textContent;
+      verifyOtpBtn.disabled = true;
+      verifyOtpBtn.textContent = "Checking...";
+      try {
+        await MaslogDB.verifySignupEmailCode(email, token);
+        verifiedEmail = email;
+        setGmailVerified(true);
+        otpBox.classList.remove("open");
+        showToast("Gmail verified");
+      } catch (err) {
+        setGmailVerified(false);
+        showToast(err.message || "Invalid Gmail verification code");
+      } finally {
+        verifyOtpBtn.disabled = false;
+        verifyOtpBtn.textContent = prev;
+      }
+    });
 
     function compressImageDataUrl(dataUrl, maxSide = 900, quality = 0.72) {
       return new Promise((resolve) => {
@@ -517,15 +613,25 @@
 
     document.getElementById("regForm").addEventListener("submit", async (e) => {
       e.preventDefault();
-      const fullName = document.getElementById("fullName").value.trim();
+      const firstName = document.getElementById("firstName").value.trim();
+      const middleInitial = document.getElementById("middleInitial").value.trim();
+      const lastName = document.getElementById("lastName").value.trim();
       const phone = document.getElementById("phone").value.trim();
       const email = document.getElementById("email").value.trim().toLowerCase();
       const password = document.getElementById("password").value;
       const idType = document.getElementById("idType").value;
       const submitBtn = document.getElementById("submitBtn");
 
+      if (!firstName || !lastName) {
+        showToast("First name and last name are required");
+        return;
+      }
       if (!email.endsWith("@gmail.com")) {
         showToast("Gmail address is required");
+        return;
+      }
+      if (!gmailVerified || verifiedEmail !== email) {
+        showToast("Please verify your Gmail code before submitting");
         return;
       }
       if (!selfieData) {
@@ -541,7 +647,9 @@
       submitBtn.textContent = "Submitting...";
       try {
         await MaslogDB.signUpClient({
-          fullName,
+          firstName,
+          middleInitial,
+          lastName,
           phone,
           email,
           password,
