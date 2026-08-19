@@ -228,7 +228,7 @@
     const loginEmail = String(email || "").trim().toLowerCase();
     const cleanToken = String(token || "").replace(/\D/g, "");
     if (!loginEmail.endsWith("@gmail.com")) throw new Error("Use a valid Gmail address");
-    if (cleanToken.length < 6) throw new Error("Enter the 6-digit Gmail verification code");
+    if (cleanToken.length < 6) throw new Error("Enter the Gmail verification code from your email");
 
     const { data, error } = await sb().auth.verifyOtp({
       email: loginEmail,
@@ -289,7 +289,7 @@
     const loginEmail = String(email || "").trim().toLowerCase();
     const cleanToken = String(token || "").replace(/\D/g, "");
     if (!loginEmail) throw new Error("Enter the email address for the account");
-    if (cleanToken.length < 6) throw new Error("Enter the 6-digit password reset code");
+    if (cleanToken.length < 6) throw new Error("Enter the password reset code from your email");
     if (String(newPassword || "").length < 8) throw new Error("Password must be at least 8 characters");
 
     const { data, error } = await sb().auth.verifyOtp({
