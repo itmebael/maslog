@@ -36,6 +36,12 @@ button, input, select { font-family: inherit; }
   min-height: 100vh;
 }
 
+html:not(.portal-nav-ready) .sidebar .brand p,
+html:not(.portal-nav-ready) .sidebar .nav,
+html:not(.portal-nav-ready) .profile {
+  visibility: hidden;
+}
+
 /* ——— Sidebar ——— */
 .sidebar {
   width: var(--sidebar-w);

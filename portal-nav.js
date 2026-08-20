@@ -117,16 +117,22 @@
   }
 
   function applyShell() {
-    if (portal === "staff") {
-      if (adminOnlyPages.has(page)) {
-        location.href = "staff-dashboard.html";
-        return;
+    let redirecting = false;
+    try {
+      if (portal === "staff") {
+        if (adminOnlyPages.has(page)) {
+          redirecting = true;
+          location.replace("staff-dashboard.html");
+          return;
+        }
+        applyStaffShell();
+      } else {
+        applyAdminMonitorShell();
       }
-      applyStaffShell();
-    } else {
-      applyAdminMonitorShell();
+      refreshPendingBookingBadge();
+    } finally {
+      if (!redirecting) document.documentElement.classList.add("portal-nav-ready");
     }
-    refreshPendingBookingBadge();
   }
 
   function findOnlineBookingLink() {
